@@ -1,20 +1,58 @@
 require('globals')
 
-local character = {
-    info = {
-        name = 'A',
-        str = 10,
-        def = 10,
-        spd = 10
-    }
+local Character = {
+    set_info = function (self, info)
+        self.info = tablex.shallow_copy(info)
+
+        return self
+    end,
+
+	new = function (self, o)
+		o = o or {}
+		setmetatable(o, self)
+		self.__index = self
+		return o
+    end,
 }
 
-local imgui_window = function (self)
-    if imgui.Begin('Menu') then
+local new_info = function (name, str, def, spd)
+	return {
+		name = name, 
+		str = str, 
+		def = def, 
+		spd = spd
+	}
+end
+
+local info_a = new_info('A', 10, 10, 10)
+local info_b = new_info('B', 10, 10, 10)
+local info_c = new_info('C', 10, 10, 10)
+
+character_a = Character:new()
+:set_info(info_a)
+
+character_b = Character:new()
+:set_info(info_b)
+
+character_c = Character:new()
+:set_info(info_c)
+
+
+local imgui_header_character = function (self)
+    if imgui.CollapsingHeader_TreeNodeFlags(self.name) then
+
         imgui.Text('Name: '..self.name)
         imgui.Text('Str: '..self.str)
         imgui.Text('Def: '..self.def)
         imgui.Text('Spd: '..self.spd)
+    end
+end
+
+local imgui_window = function ()
+    if imgui.Begin('Menu') then
+        imgui_header_character(character_a.info)
+		imgui_header_character(character_b.info)
+		imgui_header_character(character_c.info)
     end
     imgui.End()
 end
@@ -31,7 +69,7 @@ end
 love.draw = function ()
     imgui.ShowDemoWindow()
 
-    imgui_window(character.info)
+    imgui_window()
     
     imgui.Render()
     imgui.love.RenderDrawLists()
