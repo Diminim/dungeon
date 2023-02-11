@@ -14,15 +14,17 @@ local List = {
 			size = 0,
 			names = {},
 			bools = {},
+			references = {},
 		}
 
 		return self
 	end,
 
-	add = function (self, name, bool)
+	add = function (self, name, bool, reference)
 		self.items.size = self.items.size + 1
 		table.insert(self.items.names, name)
 		table.insert(self.items.bools, bool)
+		table.insert(self.items.references, reference)
 	
 		return self
 	end,
@@ -58,22 +60,40 @@ local Character = {
     end,
 }
 
-local new_info = function (name, hp, str, def, spd)
+local actions = {
+	attack = {
+		name = "Attack",
+		execute = function (self, target)
+			target.hp = target.hp - math.max(self.str - target.def, 0)
+		end,
+	},
+
+	defend = {
+		name = "Defend",
+		execute = function (self, target)
+
+		end,
+	},
+}
+
+local new_info = function (name, hp, str, def, spd, actions)
 	return {
 		name = name, 
 		hp = hp,
 		str = str, 
 		def = def, 
-		spd = spd
+		spd = spd,
+
+		actions = actions,
 	}
 end
 
-local info_a = new_info('A', 100, 10, 10, 10)
-local info_b = new_info('B', 100, 10, 10, 10)
-local info_c = new_info('C', 100, 10, 10, 10)
-local info_d = new_info('D', 100, 10, 10, 10)
-local info_e = new_info('E', 100, 10, 10, 10)
-local info_f = new_info('F', 100, 10, 10, 10)
+local info_a = new_info('A', 100, 20, 10, 10, {actions.attack, actions.defend})
+local info_b = new_info('B', 100, 20, 10, 11, {actions.attack, actions.defend})
+local info_c = new_info('C', 100, 20, 10, 12, {actions.attack, actions.defend})
+local info_d = new_info('D', 100, 20, 10, 13, {actions.attack, actions.defend})
+local info_e = new_info('E', 100, 20, 10, 14, {actions.attack, actions.defend})
+local info_f = new_info('F', 100, 20, 10, 14, {actions.attack})
 
 local characters = {
 	Character:new()
@@ -95,19 +115,21 @@ local characters = {
 	:set_info(info_f)
 }
 
-local function generate_actions ()
+local function generate_actions (character)
 	local actions = List:new()
-	:add('Attack', true)
-	:add('Defend', false)
+	for i, v in ipairs(character.info.actions) do
+		local bool = (i == 1) and true or false
+		actions:add(v.name, bool, v)
+	end
 
 	return actions
 end
 
-local function generate_targets ()
+local function generate_targets (characters)
 	local targets = List:new()
 	for i, v in ipairs(characters) do
 		local bool = (i == 1) and true or false
-		targets:add(v.info.name, bool)
+		targets:add(v.info.name, bool, v)
 	end
 
 	return targets
@@ -121,7 +143,7 @@ for i, v in ipairs(characters) do
 		targets = generate_targets(characters)
 	}
 	
-	characters_menu_data[v.info.name] = t
+	table.insert(characters_menu_data, t)
 end
 
 local function iterate_list_selectables (list)
@@ -166,9 +188,9 @@ local imgui_window_ally = function ()
     if imgui.Begin('Allies') then
 		if imgui.BeginTabBar('') then
 
-        	imgui_tab_character(characters_menu_data.A)
-			imgui_tab_character(characters_menu_data.B)
-			imgui_tab_character(characters_menu_data.C)
+        	imgui_tab_character(characters_menu_data[1])
+			imgui_tab_character(characters_menu_data[2])
+			imgui_tab_character(characters_menu_data[3])
 
 			imgui.EndTabBar()
 		end
@@ -180,9 +202,9 @@ local imgui_window_enemy = function ()
     if imgui.Begin('Enemies') then
 		if imgui.BeginTabBar('') then
 
-        	imgui_tab_character(characters_menu_data.D)
-			imgui_tab_character(characters_menu_data.E)
-			imgui_tab_character(characters_menu_data.F)
+        	imgui_tab_character(characters_menu_data[4])
+			imgui_tab_character(characters_menu_data[5])
+			imgui_tab_character(characters_menu_data[6])
 
 			imgui.EndTabBar()
 		end
@@ -193,7 +215,30 @@ end
 local imgui_window_manager = function ()
     if imgui.Begin('Log') then
 		if imgui.Button('End Turn') then
-			table.insert(battle_log, 'Wow!')
+			for i, v in ipairs(characters_menu_data) do
+				local character = v.character
+				local target_index
+				local action_index
+				for i2, v2 in ipairs(v.actions.items.bools) do
+					if v2 == true then
+						action_index = i2
+						break
+					end
+				end
+				for i2, v2 in ipairs(v.targets.items.bools) do
+					if v2 == true then
+						target_index = i2
+						break
+					end
+				end
+				local str = ''
+				str = str..character.info.name..' '
+				str = str..v.actions.items.names[action_index]..' '
+				str = str..v.targets.items.names[target_index]
+
+				v.actions.items.references[action_index].execute(character.info, v.targets.items.references[target_index].info)
+				table.insert(battle_log, str)
+			end
 		end
 
 		for i, v in ipairs(battle_log) do
@@ -229,49 +274,42 @@ love.mousemoved = function (x, y, ...)
         -- your code here
     end
 end
-
 love.mousepressed = function (x, y, button, ...)
     imgui.love.MousePressed(button)
     if not imgui.love.GetWantCaptureMouse() then
         -- your code here 
     end
 end
-
 love.mousereleased = function (x, y, button, ...)
     imgui.love.MouseReleased(button)
     if not imgui.love.GetWantCaptureMouse() then
         -- your code here 
     end
 end
-
 love.wheelmoved = function (x, y)
     imgui.love.WheelMoved(x, y)
     if not imgui.love.GetWantCaptureMouse() then
         -- your code here 
     end
 end
-
 love.keypressed = function (key, ...)
     imgui.love.KeyPressed(key)
     if not imgui.love.GetWantCaptureKeyboard() then
         -- your code here 
     end
 end
-
 love.keyreleased = function (key, ...)
     imgui.love.KeyReleased(key)
     if not imgui.love.GetWantCaptureKeyboard() then
         -- your code here 
     end
 end
-
 love.textinput = function (t)
     imgui.love.TextInput(t)
     if imgui.love.GetWantCaptureKeyboard() then
         -- your code here 
     end
 end
-
 love.quit = function ()
     return imgui.love.Shutdown()
 end
