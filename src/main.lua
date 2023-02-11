@@ -132,6 +132,8 @@ local function iterate_list_selectables (list)
 	end
 end
 
+local battle_log = {}
+
 local imgui_tab_character = function (self)
     if imgui.BeginTabItem(self.character.info.name) then
 
@@ -190,6 +192,13 @@ end
 
 local imgui_window_manager = function ()
     if imgui.Begin('Log') then
+		if imgui.Button('End Turn') then
+			table.insert(battle_log, 'Wow!')
+		end
+
+		for i, v in ipairs(battle_log) do
+			imgui.Text(v)
+		end
     end
     imgui.End()
 end
