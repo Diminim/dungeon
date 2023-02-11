@@ -4,6 +4,7 @@ snake_case.
 function () declarations should have a space after the name but before the arguments.
 use the name = function () style of declarations
 
+unless it is a global, all variables used in a function must be either an argument or defined in scope
 if multiple tables have the same format, create a constructor
 if it makes sense to create a local scope variable, create a function that accepts
     that variable as an argument.

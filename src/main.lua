@@ -71,25 +71,58 @@ end
 local info_a = new_info('A', 100, 10, 10, 10)
 local info_b = new_info('B', 100, 10, 10, 10)
 local info_c = new_info('C', 100, 10, 10, 10)
+local info_d = new_info('D', 100, 10, 10, 10)
+local info_e = new_info('E', 100, 10, 10, 10)
+local info_f = new_info('F', 100, 10, 10, 10)
 
-character_a = Character:new()
-:set_info(info_a)
+local characters = {
+	Character:new()
+	:set_info(info_a),
 
-character_b = Character:new()
-:set_info(info_b)
+	Character:new()
+	:set_info(info_b),
 
-character_c = Character:new()
-:set_info(info_c)
+	Character:new()
+	:set_info(info_c),
 
+	Character:new()
+	:set_info(info_d),
 
+	Character:new()
+	:set_info(info_e),
 
-local list_actions = List:new()
-:add('Attack', true)
-:add('Defend', false)
+	Character:new()
+	:set_info(info_f)
+}
 
-local list_targets = List:new()
-:add('A', true)
-:add('B', false)
+local function generate_actions ()
+	local actions = List:new()
+	:add('Attack', true)
+	:add('Defend', false)
+
+	return actions
+end
+
+local function generate_targets ()
+	local targets = List:new()
+	for i, v in ipairs(characters) do
+		local bool = (i == 1) and true or false
+		targets:add(v.info.name, bool)
+	end
+
+	return targets
+end
+
+local characters_menu_data = {}
+for i, v in ipairs(characters) do
+	local t = {
+		character = v,
+		actions = generate_actions(v),
+		targets = generate_targets(characters)
+	}
+	
+	characters_menu_data[v.info.name] = t
+end
 
 local function iterate_list_selectables (list)
 	for i, v in ipairs(list.items.names) do
@@ -100,15 +133,15 @@ local function iterate_list_selectables (list)
 end
 
 local imgui_tab_character = function (self)
-    if imgui.BeginTabItem(self.name) then
+    if imgui.BeginTabItem(self.character.info.name) then
 
-        imgui.Text('NAME: '..self.name)
-		imgui.Text('HP: '..self.hp)
-        imgui.Text('STR: '..self.str)
-        imgui.Text('DEF: '..self.def)
-        imgui.Text('SPD: '..self.spd)
+        imgui.Text('NAME: '..self.character.info.name)
+		imgui.Text('HP: '..self.character.info.hp)
+        imgui.Text('STR: '..self.character.info.str)
+        imgui.Text('DEF: '..self.character.info.def)
+        imgui.Text('SPD: '..self.character.info.spd)
 
-		iterate_list_selectables(list_actions)
+		iterate_list_selectables(self.actions)
 
 
 		if imgui.Button('Select Target') then
@@ -117,7 +150,7 @@ local imgui_tab_character = function (self)
 
 		if imgui.BeginPopup('targets') then
 
-			iterate_list_selectables(list_targets)
+			iterate_list_selectables(self.targets)
 
 			imgui.EndPopup()
 		end
@@ -127,16 +160,36 @@ local imgui_tab_character = function (self)
     end
 end
 
-local imgui_window = function ()
-    if imgui.Begin('Menu') then
+local imgui_window_ally = function ()
+    if imgui.Begin('Allies') then
 		if imgui.BeginTabBar('') then
 
-        	imgui_tab_character(character_a.info)
-			imgui_tab_character(character_b.info)
-			imgui_tab_character(character_c.info)
+        	imgui_tab_character(characters_menu_data.A)
+			imgui_tab_character(characters_menu_data.B)
+			imgui_tab_character(characters_menu_data.C)
 
 			imgui.EndTabBar()
 		end
+    end
+    imgui.End()
+end
+
+local imgui_window_enemy = function ()
+    if imgui.Begin('Enemies') then
+		if imgui.BeginTabBar('') then
+
+        	imgui_tab_character(characters_menu_data.D)
+			imgui_tab_character(characters_menu_data.E)
+			imgui_tab_character(characters_menu_data.F)
+
+			imgui.EndTabBar()
+		end
+    end
+    imgui.End()
+end
+
+local imgui_window_manager = function ()
+    if imgui.Begin('Log') then
     end
     imgui.End()
 end
@@ -153,7 +206,9 @@ end
 love.draw = function ()
     imgui.ShowDemoWindow()
 
-    imgui_window()
+    imgui_window_ally()
+	imgui_window_enemy()
+	imgui_window_manager()
     
     imgui.Render()
     imgui.love.RenderDrawLists()
