@@ -1,0 +1,9 @@
+Single quotes over double quotes.
+snake_case.
+function () declarations should have a space after the name but before the arguments.
+
+if it makes sense to create a local scope variable, create a function that accepts
+    that variable as an argument.
+
+git commits you don't have a description for get a single .
+
