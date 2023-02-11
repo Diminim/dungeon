@@ -1,32 +1,33 @@
 require('globals')
 
 local Character = {
+	new = function (self)
+		local o = {}
+		setmetatable(o, self)
+		self.__index = self
+		return o
+    end,
+
     set_info = function (self, info)
         self.info = tablex.shallow_copy(info)
 
         return self
     end,
-
-	new = function (self, o)
-		o = o or {}
-		setmetatable(o, self)
-		self.__index = self
-		return o
-    end,
 }
 
-local new_info = function (name, str, def, spd)
+local new_info = function (name, hp, str, def, spd)
 	return {
 		name = name, 
+		hp = hp,
 		str = str, 
 		def = def, 
 		spd = spd
 	}
 end
 
-local info_a = new_info('A', 10, 10, 10)
-local info_b = new_info('B', 10, 10, 10)
-local info_c = new_info('C', 10, 10, 10)
+local info_a = new_info('A', 100, 10, 10, 10)
+local info_b = new_info('B', 100, 10, 10, 10)
+local info_c = new_info('C', 100, 10, 10, 10)
 
 character_a = Character:new()
 :set_info(info_a)
@@ -37,22 +38,103 @@ character_b = Character:new()
 character_c = Character:new()
 :set_info(info_c)
 
+local selections = {
+	true, false
+}
 
-local imgui_header_character = function (self)
-    if imgui.CollapsingHeader_TreeNodeFlags(self.name) then
+local List = {
+	new = function (self)
+		local o = {}
+		setmetatable(o, self)
+		self.__index = self
 
-        imgui.Text('Name: '..self.name)
-        imgui.Text('Str: '..self.str)
-        imgui.Text('Def: '..self.def)
-        imgui.Text('Spd: '..self.spd)
+		return o
+    end,
+
+	init = function (self)
+		self.items = {
+			size = 0,
+			names = {},
+			bools = {},
+		}
+
+		return self
+	end,
+
+	add = function (self, name, bool)
+		self.items.size = self.items.size + 1
+		table.insert(self.items.names, name)
+		table.insert(self.items.bools, bool)
+	
+		return self
+	end,
+
+	select_index = function (self, selected_index)
+		for i, v in ipairs(self.items.bools) do
+			if i == selected_index then 
+				self.items.bools[i] = true
+			else 
+				self.items.bools[i] = false
+			end
+		end
+	end
+}
+
+local list_actions = List:new()
+:init()
+:add('Attack', true)
+:add('Defend', false)
+
+local list_targets = List:new()
+:init()
+:add('A', true)
+:add('B', false)
+
+local imgui_tab_character = function (self)
+    if imgui.BeginTabItem(self.name) then
+
+        imgui.Text('NAME: '..self.name)
+		imgui.Text('HP: '..self.hp)
+        imgui.Text('STR: '..self.str)
+        imgui.Text('DEF: '..self.def)
+        imgui.Text('SPD: '..self.spd)
+
+		for i, v in ipairs(list_actions.items.names) do
+			if imgui.Selectable_Bool(v, list_actions.items.bools[i]) then
+				list_actions:select_index(i)
+			end
+		end
+
+		if imgui.Button('Select Target') then
+			imgui.OpenPopup_Str('targets')
+		end
+
+		if imgui.BeginPopup('targets') then
+
+			for i, v in ipairs(list_targets.items.names) do
+				if imgui.Selectable_Bool(v, list_targets.items.bools[i]) then
+					list_targets:select_index(i)
+				end
+			end
+
+			imgui.EndPopup()
+		end
+
+
+		imgui.EndTabItem()
     end
 end
 
 local imgui_window = function ()
     if imgui.Begin('Menu') then
-        imgui_header_character(character_a.info)
-		imgui_header_character(character_b.info)
-		imgui_header_character(character_c.info)
+		if imgui.BeginTabBar('') then
+
+        	imgui_tab_character(character_a.info)
+			imgui_tab_character(character_b.info)
+			imgui_tab_character(character_c.info)
+
+			imgui.EndTabBar()
+		end
     end
     imgui.End()
 end

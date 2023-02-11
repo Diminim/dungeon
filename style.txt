@@ -7,6 +7,7 @@ use the name = function () style of declarations
 if multiple tables have the same format, create a constructor
 if it makes sense to create a local scope variable, create a function that accepts
     that variable as an argument.
+if you do the same operation on a set of data, use an iterator.
 Easy to read, easy to edit is the motto.
 
 git commits you don't have a description for get a single .
