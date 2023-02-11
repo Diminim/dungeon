@@ -1,53 +1,11 @@
 require('globals')
 
-local Character = {
-	new = function (self)
-		local o = {}
-		setmetatable(o, self)
-		self.__index = self
-		return o
-    end,
-
-    set_info = function (self, info)
-        self.info = tablex.shallow_copy(info)
-
-        return self
-    end,
-}
-
-local new_info = function (name, hp, str, def, spd)
-	return {
-		name = name, 
-		hp = hp,
-		str = str, 
-		def = def, 
-		spd = spd
-	}
-end
-
-local info_a = new_info('A', 100, 10, 10, 10)
-local info_b = new_info('B', 100, 10, 10, 10)
-local info_c = new_info('C', 100, 10, 10, 10)
-
-character_a = Character:new()
-:set_info(info_a)
-
-character_b = Character:new()
-:set_info(info_b)
-
-character_c = Character:new()
-:set_info(info_c)
-
-local selections = {
-	true, false
-}
-
 local List = {
 	new = function (self)
 		local o = {}
 		setmetatable(o, self)
 		self.__index = self
-
+		o:init()
 		return o
     end,
 
@@ -80,15 +38,66 @@ local List = {
 	end
 }
 
+local Character = {
+	new = function (self)
+		local o = {}
+		setmetatable(o, self)
+		self.__index = self
+		o:init()
+		return o
+    end,
+
+	init = function (self)
+		self.info = {}
+	end,
+
+    set_info = function (self, info)
+        self.info = tablex.shallow_copy(info)
+
+        return self
+    end,
+}
+
+local new_info = function (name, hp, str, def, spd)
+	return {
+		name = name, 
+		hp = hp,
+		str = str, 
+		def = def, 
+		spd = spd
+	}
+end
+
+local info_a = new_info('A', 100, 10, 10, 10)
+local info_b = new_info('B', 100, 10, 10, 10)
+local info_c = new_info('C', 100, 10, 10, 10)
+
+character_a = Character:new()
+:set_info(info_a)
+
+character_b = Character:new()
+:set_info(info_b)
+
+character_c = Character:new()
+:set_info(info_c)
+
+
+
 local list_actions = List:new()
-:init()
 :add('Attack', true)
 :add('Defend', false)
 
 local list_targets = List:new()
-:init()
 :add('A', true)
 :add('B', false)
+
+local function iterate_list_selectables (list)
+	for i, v in ipairs(list.items.names) do
+		if imgui.Selectable_Bool(v, list.items.bools[i]) then
+			list:select_index(i)
+		end
+	end
+end
 
 local imgui_tab_character = function (self)
     if imgui.BeginTabItem(self.name) then
@@ -99,11 +108,8 @@ local imgui_tab_character = function (self)
         imgui.Text('DEF: '..self.def)
         imgui.Text('SPD: '..self.spd)
 
-		for i, v in ipairs(list_actions.items.names) do
-			if imgui.Selectable_Bool(v, list_actions.items.bools[i]) then
-				list_actions:select_index(i)
-			end
-		end
+		iterate_list_selectables(list_actions)
+
 
 		if imgui.Button('Select Target') then
 			imgui.OpenPopup_Str('targets')
@@ -111,11 +117,7 @@ local imgui_tab_character = function (self)
 
 		if imgui.BeginPopup('targets') then
 
-			for i, v in ipairs(list_targets.items.names) do
-				if imgui.Selectable_Bool(v, list_targets.items.bools[i]) then
-					list_targets:select_index(i)
-				end
-			end
+			iterate_list_selectables(list_targets)
 
 			imgui.EndPopup()
 		end
