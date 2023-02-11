@@ -1,0 +1,17 @@
+{
+    "ego.power-tools": {
+        "commands": {
+            "myCommand": {
+                "script": "my_command2.js",
+                "button": {
+                    "text": "Run love."
+                }
+            }
+        }
+    },
+    "Lua.runtime.version": "LuaJIT",
+    "Lua.workspace.library": [
+        "${3rd}/love2d/library"
+    ],
+    "Lua.workspace.checkThirdParty": false
+}
