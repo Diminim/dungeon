@@ -117,6 +117,21 @@ actions.poison = Action:new{
 	name = "Poison",
 	priority = 0,
 	execute = function (self, context)
+		local turn_number = context.battle.current_turn
+		local has_poison_ticked = false
+
+		local function event_poison()
+			if turn_number ~= context.battle.current_turn then
+				has_poison_ticked = false
+				turn_number = context.battle.current_turn
+			end
+			if has_poison_ticked == false then
+				has_poison_ticked = true
+				context.target.info.hp = context.target.info.hp - 10
+				table.insert(context.battle.log, context.target.info.name..' takes poison damage')
+			end
+		end
+		table.insert(context.battle.active_events, event_poison)
 	end
 }
 

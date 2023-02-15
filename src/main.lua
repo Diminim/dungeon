@@ -79,6 +79,7 @@ local Battle = {
 		self.action_priority_queue = {}
 		self.log = {}
 		self.groups = {}
+		self.active_events = {}
 
 		self:init_groups()
 	end,
@@ -291,8 +292,7 @@ local function turn_end ()
 		if message then
 			table.insert(battle.log, message)
 		end
-
-		for i, v in ipairs(active_events) do
+		for i, v in ipairs(battle.active_events) do
 			v()
 		end
 	end
@@ -427,11 +427,10 @@ local states = {
 				Character:new()
 				:set_info(character_infos.f)
 			}
-			active_events = {}
-			table.insert(active_events, event.character_died)
-			table.insert(active_events, event.allies_died)
-			table.insert(active_events, event.enemies_died)
 			battle = Battle:new(characters)
+			table.insert(battle.active_events, event.character_died)
+			table.insert(battle.active_events, event.allies_died)
+			table.insert(battle.active_events, event.enemies_died)
 			characters_menu_data = new_characters_menu_data(battle)
 		end,
 		exit = function (self, machine, ...)
