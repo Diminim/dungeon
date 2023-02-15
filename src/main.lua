@@ -95,8 +95,8 @@ local Battle = {
 -- -------------------------------------------------------------------------- --
 
 local map = sti('maps/map/tiles.lua')
-local spriteLayer = map:addCustomLayer('Sprite Layer', 3)
-spriteLayer.sprites = {
+local sprite_layer = map:addCustomLayer('Sprite Layer', 3)
+sprite_layer.sprites = {
 	player = {
 		image = love.graphics.newImage('guy2.png'),
 		x = 16*0,
@@ -104,7 +104,7 @@ spriteLayer.sprites = {
 		r = 0,
 	}
 }
-spriteLayer.update = function(self, dt)
+sprite_layer.update = function(self, dt)
 	local player = self.sprites.player
 	if love.keyboard.isDown('w') then
 		player.y = player.y - 16
@@ -116,7 +116,7 @@ spriteLayer.update = function(self, dt)
 		player.x = player.x + 16
 	end
 end
-spriteLayer.draw = function(self)
+sprite_layer.draw = function(self)
 	for _, sprite in pairs(self.sprites) do
 		local x = math.floor(sprite.x)
 		local y = math.floor(sprite.y)
@@ -130,7 +130,6 @@ local character_infos = require('character_infos')
 
 local battle
 local characters_menu_data
-local active_events
 
 local event = {
 	character_died = function ()
@@ -232,8 +231,6 @@ local action_info_new = function (action, context)
 
 	return action_info
 end
-
-
 local function action_priority_queue_insertion_sort (action_info)
 	local insertion_index
 	if not battle.action_priority_queue[battle.current_turn + action_info.turn] then
@@ -256,50 +253,6 @@ end
 
 
 
-
-
-local function turn_end ()
-	for i, v in ipairs(characters_menu_data) do
-		local action_index = v.actions:search('bool', true)
-		local target_index = v.targets:search('bool', true)
-
-		local character = v.character
-		local action = v.actions.items[action_index].pointer
-		local target = v.targets.items[target_index].pointer
-
-		local context = {
-			actor = v.character,
-			target = v.targets.items[target_index].pointer,
-			battle = battle,
-		}
-
-		local action_info = action_info_new(action, context)
-		action_priority_queue_insertion_sort(action_info)
-	end
-
-	for i, v in ipairs(battle.action_priority_queue[battle.current_turn]) do
-		local message, chained_action = v.action()
-		if chained_action then
-			local context = {
-				actor = v.actor,
-				target = v.target,
-				battle = battle,
-			}
-
-			local action_info = action_info_new(chained_action, context)
-			action_priority_queue_insertion_sort(action_info)
-		end
-		if message then
-			table.insert(battle.log, message)
-		end
-		for i, v in ipairs(battle.active_events) do
-			v()
-		end
-	end
-	battle.current_turn = battle.current_turn + 1
-end
-
-local canvas = love.graphics.newCanvas(800, 800, {type = "2d", format = "normal", readable = true})
 
 local imgui_tab_character = function (self)
     if imgui.BeginTabItem(self.character.info.name) then
@@ -354,6 +307,46 @@ local imgui_child_enemy = function ()
     end
     imgui.EndChild()
 end
+local function turn_end ()
+	for i, v in ipairs(characters_menu_data) do
+		local action_index = v.actions:search('bool', true)
+		local target_index = v.targets:search('bool', true)
+
+		local character = v.character
+		local action = v.actions.items[action_index].pointer
+		local target = v.targets.items[target_index].pointer
+
+		local context = {
+			actor = v.character,
+			target = v.targets.items[target_index].pointer,
+			battle = battle,
+		}
+
+		local action_info = action_info_new(action, context)
+		action_priority_queue_insertion_sort(action_info)
+	end
+
+	for i, v in ipairs(battle.action_priority_queue[battle.current_turn]) do
+		local message, chained_action = v.action()
+		if chained_action then
+			local context = {
+				actor = v.actor,
+				target = v.target,
+				battle = battle,
+			}
+
+			local action_info = action_info_new(chained_action, context)
+			action_priority_queue_insertion_sort(action_info)
+		end
+		if message then
+			table.insert(battle.log, message)
+		end
+		for i, v in ipairs(battle.active_events) do
+			v()
+		end
+	end
+	battle.current_turn = battle.current_turn + 1
+end
 local imgui_child_manager = function ()
     if imgui.BeginChild_Str('Log', imgui.ImVec2_Float(200,200), true) then
 		imgui.Text(tostring(battle.current_turn))
@@ -387,6 +380,7 @@ local states = {
 	},
 
 	map = {
+		canvas = love.graphics.newCanvas(800, 800, {type = "2d", format = "normal", readable = true})
 		enter = function (self, machine, ...)
 
 		end,
@@ -397,12 +391,12 @@ local states = {
 			map:update(dt)
 		end,
 		draw = function (self, machine, ...)
-			love.graphics.setCanvas(canvas)
+			love.graphics.setCanvas(self.canvas)
 				love.graphics.clear()
 				map:draw()
 			love.graphics.setCanvas()
 
-			imgui.Image(canvas, imgui.ImVec2_Float(800,800))
+			imgui.Image(self.canvas, imgui.ImVec2_Float(800,800))
 		end,
 	},
 
@@ -450,6 +444,8 @@ local states = {
 }
 state_machine:new(states)
 state_machine:set_state('battle')
+
+-- -------------------------------------------------------------------------- --
 
 local imgui_window = function ()
 	if imgui.Begin('All') then
