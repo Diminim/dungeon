@@ -129,6 +129,51 @@ local character_infos = require('character_infos')
 
 local battle
 local characters_menu_data
+local active_events
+
+local event = {
+	character_died = function ()
+		for i, v in ipairs(battle.groups.all) do
+			local message
+			if (v.info.is_dead == false) and (v.info.hp <= 0) then
+				v.info.is_dead = true
+				message = ('%s %s'):format(
+					v.info.name, 
+					'died!'
+				)
+			end
+			if message then 
+				table.insert(battle.log, message) 
+			end
+		end
+	end,
+
+	allies_died = function ()
+		local dead_number = 0
+		for i, v in ipairs(battle.groups.allies) do
+			if (v.info.is_dead == true) then
+				dead_number = dead_number + 1
+			end
+		end
+		if dead_number == #battle.groups.allies then
+			local message = 'Allies have been defeated...'
+			table.insert(battle.log, message)
+		end
+	end,
+
+	enemies_died = function ()
+		local dead_number = 0
+		for i, v in ipairs(battle.groups.enemies) do
+			if (v.info.is_dead == true) then
+				dead_number = dead_number + 1
+			end
+		end
+		if dead_number == #battle.groups.enemies then
+			local message = 'Enemies have been defeated!'
+			table.insert(battle.log, message)
+		end
+	end,
+}
 
 local function gui_generate_actions (character)
 	local actions = List:new()
@@ -209,85 +254,7 @@ local function action_priority_queue_insertion_sort (action_info)
 end
 
 
-local event = {
-	character_died = {
-		checker = function (self)
-			for i, v in ipairs(battle.groups.all) do
-				local message = self:condition(v)
-				if message then 
-					table.insert(battle.log, message) 
-				end
-			end
-		end,
-		condition = function (self, character)
-			if (character.info.is_dead == false) and (character.info.hp <= 0) then
-				return self:response(character)
-			end
-		end,
-		response = function (self, character)
-			character.info.is_dead = true
-			local message = ('%s %s'):format(
-				character.info.name, 
-				'died!'
-			)
-			return message
-		end,
 
-	},
-
-	allies_died = {
-		checker = function (self, group)
-			local message = self:condition(battle.groups.allies)
-			if message then 
-				table.insert(battle.log, message) 
-			end
-		end,
-		condition = function (self, group)
-			local dead_number = 0
-			for i, v in ipairs(group) do
-				if v.info.is_dead then 
-					dead_number = dead_number + 1
-				end
-			end
-			if dead_number == #group then
-				return self:response()
-			end
-		end,
-		response = function (self)
-			local message = 'Allies have all been defeated...'
-			return message
-		end,
-	},
-
-	enemies_died = {
-		checker = function (self, group)
-			local message = self:condition(battle.groups.enemies)
-			if message then 
-				table.insert(battle.log, message) 
-			end
-		end,
-		condition = function (self, group)
-			local dead_number = 0
-			for i, v in ipairs(group) do
-				if v.info.is_dead then 
-					dead_number = dead_number + 1
-				end
-			end
-			if dead_number == #group then
-				return self:response()
-			end
-		end,
-		response = function (self)
-			local message = 'Enemies have all been defeated!'
-			return message
-		end,
-	}
-}
-
-local active_events = {}
-table.insert(active_events, event.character_died)
-table.insert(active_events, event.allies_died)
-table.insert(active_events, event.enemies_died)
 
 
 local function turn_end ()
@@ -326,7 +293,7 @@ local function turn_end ()
 		end
 
 		for i, v in ipairs(active_events) do
-			v:checker()
+			v()
 		end
 	end
 	battle.current_turn = battle.current_turn + 1
@@ -460,6 +427,10 @@ local states = {
 				Character:new()
 				:set_info(character_infos.f)
 			}
+			active_events = {}
+			table.insert(active_events, event.character_died)
+			table.insert(active_events, event.allies_died)
+			table.insert(active_events, event.enemies_died)
 			battle = Battle:new(characters)
 			characters_menu_data = new_characters_menu_data(battle)
 		end,

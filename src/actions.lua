@@ -108,6 +108,8 @@ actions.burn_all = Action:new{
 		end
 
 		local message = self.name
+
+		return message
 	end
 }
 
