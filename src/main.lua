@@ -129,10 +129,9 @@ end
 local character_infos = require('character_infos')
 
 local battle
-local characters_menu_data
 
-local event = {
-	character_died = function ()
+local events = {
+	character_died = function (battle)
 		for i, v in ipairs(battle.groups.all) do
 			local message
 			if (v.info.is_dead == false) and (v.info.hp <= 0) then
@@ -148,7 +147,7 @@ local event = {
 		end
 	end,
 
-	allies_died = function ()
+	allies_died = function (battle)
 		local dead_number = 0
 		for i, v in ipairs(battle.groups.allies) do
 			if (v.info.is_dead == true) then
@@ -161,7 +160,7 @@ local event = {
 		end
 	end,
 
-	enemies_died = function ()
+	enemies_died = function (battle)
 		local dead_number = 0
 		for i, v in ipairs(battle.groups.enemies) do
 			if (v.info.is_dead == true) then
@@ -231,7 +230,7 @@ local action_info_new = function (action, context)
 
 	return action_info
 end
-local function action_priority_queue_insertion_sort (action_info)
+local action_priority_queue_insertion_sort = function (action_info)
 	local insertion_index
 	if not battle.action_priority_queue[battle.current_turn + action_info.turn] then
 		battle.action_priority_queue[battle.current_turn + action_info.turn] = {}
@@ -285,9 +284,9 @@ local imgui_child_ally = function ()
     if imgui.BeginChild_Str('Allies', imgui.ImVec2_Float(200,200), true) then
 		if imgui.BeginTabBar('') then
 
-        	imgui_tab_character(characters_menu_data[1])
-			imgui_tab_character(characters_menu_data[2])
-			imgui_tab_character(characters_menu_data[3])
+        	imgui_tab_character(battle.characters_menu_data[1])
+			imgui_tab_character(battle.characters_menu_data[2])
+			imgui_tab_character(battle.characters_menu_data[3])
 
 			imgui.EndTabBar()
 		end
@@ -298,17 +297,17 @@ local imgui_child_enemy = function ()
     if imgui.BeginChild_Str('Enemies', imgui.ImVec2_Float(200,200), true) then
 		if imgui.BeginTabBar('') then
 
-        	imgui_tab_character(characters_menu_data[4])
-			imgui_tab_character(characters_menu_data[5])
-			imgui_tab_character(characters_menu_data[6])
+        	imgui_tab_character(battle.characters_menu_data[4])
+			imgui_tab_character(battle.characters_menu_data[5])
+			imgui_tab_character(battle.characters_menu_data[6])
 
 			imgui.EndTabBar()
 		end
     end
     imgui.EndChild()
 end
-local function turn_end ()
-	for i, v in ipairs(characters_menu_data) do
+local turn_end = function ()
+	for i, v in ipairs(battle.characters_menu_data) do
 		local action_index = v.actions:search('bool', true)
 		local target_index = v.targets:search('bool', true)
 
@@ -342,7 +341,7 @@ local function turn_end ()
 			table.insert(battle.log, message)
 		end
 		for i, v in ipairs(battle.active_events) do
-			v()
+			v(battle)
 		end
 	end
 	battle.current_turn = battle.current_turn + 1
@@ -380,7 +379,7 @@ local states = {
 	},
 
 	map = {
-		canvas = love.graphics.newCanvas(800, 800, {type = "2d", format = "normal", readable = true})
+		canvas = love.graphics.newCanvas(800, 800, {type = "2d", format = "normal", readable = true}),
 		enter = function (self, machine, ...)
 
 		end,
@@ -422,10 +421,10 @@ local states = {
 				:set_info(character_infos.f)
 			}
 			battle = Battle:new(characters)
-			table.insert(battle.active_events, event.character_died)
-			table.insert(battle.active_events, event.allies_died)
-			table.insert(battle.active_events, event.enemies_died)
-			characters_menu_data = new_characters_menu_data(battle)
+			table.insert(battle.active_events, events.character_died)
+			table.insert(battle.active_events, events.allies_died)
+			table.insert(battle.active_events, events.enemies_died)
+			battle.characters_menu_data = new_characters_menu_data(battle)
 		end,
 		exit = function (self, machine, ...)
 
