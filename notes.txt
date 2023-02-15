@@ -1,0 +1,21 @@
+Let's pretend the rpg battle system is managed by a state machine
+I can tell the battle system the situation after every action
+
+Let's put that to the side.
+
+What if a character dies and a system in the game wants to know about that
+I want to print "X has died" when character X's hp drops to or below 0.
+
+So *something* has to evaluate for that, and then send out message when it occurs
+
+evaluation has to happen after every action
+That thing has to know pretty much everything
+
+Put that to the side
+
+An event is something I have to define
+Something has to evaluate for that event
+Something has to register that event's occurence
+Something has to do something with that register
+
+Events should be tied to things that happen once

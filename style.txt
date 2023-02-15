@@ -4,13 +4,27 @@ snake_case.
 function () declarations should have a space after the name but before the arguments.
 use the name = function () style of declarations
 
+Easy to read, easy to edit is the motto.
+
 With the exception of debugging, don't use string keys as a printable name, create a name field.
 unless it is a global, all variables used in a function must be either an argument or defined in scope
 if multiple tables have the same format, create a constructor
 if it makes sense to create a local scope variable, create a function that accepts
     that variable as an argument.
 if you do the same operation on a set of data, use an iterator.
-Easy to read, easy to edit is the motto.
+if the variable name is pluralized with an 's' it should be a table
+if you perform an operation on a set of data of a class instance, consider if it should be a class method.
+
+if it doesn't make sense to turn a datastructure into a class, at least define it using a new_object() function
+Try to phrase functions that operate on a datastructure but don't belong to a class as if they do`
+    i.e. data_new over new_data
+
+If a group of functions refer to eachother, they should be bound in a table that passes self to the methods.
+
 
 git commits you don't have a description for get a single .
+if all you did is refactor and can't think of a description, say refactor
+Try to write the commit description before you write new code,
+    this has the advantage of giving you a goal, better git logs,
+    and keeping on track.
 

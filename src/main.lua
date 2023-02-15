@@ -1,4 +1,4 @@
-require('globals') -- tablex, imgui
+require('globals')
 
 local List = {
 	new = function (self)
@@ -10,36 +10,41 @@ local List = {
     end,
 
 	init = function (self)
-		self.items = {
-			size = 0,
-			names = {},
-			bools = {},
-			references = {},
-		}
+		self.items = {}
 
 		return self
 	end,
 
-	add = function (self, name, bool, reference)
-		self.items.size = self.items.size + 1
-		table.insert(self.items.names, name)
-		table.insert(self.items.bools, bool)
-		table.insert(self.items.references, reference)
+	-- I'd like to be able to abstract the things I add from the List
+	add = function (self, name, bool, pointer)
+		table.insert(self.items, {
+			name = name,
+			bool = bool,
+			pointer = pointer,
+		})
 	
 		return self
 	end,
 
+	-- This is too specific for List
 	select_index = function (self, selected_index)
-		for i, v in ipairs(self.items.bools) do
+		for i, v in ipairs(self.items) do
 			if i == selected_index then 
-				self.items.bools[i] = true
-			else 
-				self.items.bools[i] = false
+				v.bool = true
+			else
+				v.bool = false
+			end
+		end
+	end,
+
+	search = function(self, field, critera)
+		for i, v in ipairs(self.items) do
+			if v[field] == critera then
+				return i
 			end
 		end
 	end
 }
-
 local Character = {
 	new = function (self)
 		local o = {}
@@ -59,102 +64,273 @@ local Character = {
         return self
     end,
 }
+local Battle = {
+	new = function (self, character_list)
+		local o = {}
+		setmetatable(o, self)
+		self.__index = self
+		o:init(character_list)
+		return o
+    end,
 
-local actions = {
-	attack = {
-		name = "Attack",
-		execute = function (self, target)
-			target.hp = target.hp - math.max(self.str - target.def, 0)
-		end,
-	},
+	init = function (self, character_list)
+		self.characters = character_list
+		self.current_turn = 1
+		self.action_priority_queue = {}
+		self.log = {}
+		self.groups = {}
 
-	defend = {
-		name = "Defend",
-		execute = function (self, target)
+		self:init_groups()
+	end,
 
-		end,
-	},
+	init_groups = function (self)
+		self.groups.all = self.characters
+		self.groups.allies = {self.characters[1], self.characters[2], self.characters[3]}
+		self.groups.enemies = {self.characters[4], self.characters[5], self.characters[6]}
+	end,
+
 }
 
-local new_info = function (name, hp, str, def, spd, actions)
-	return {
-		name = name, 
-		hp = hp,
-		str = str, 
-		def = def, 
-		spd = spd,
+-- -------------------------------------------------------------------------- --
 
-		actions = actions,
+local map = sti('maps/map/tiles.lua')
+local spriteLayer = map:addCustomLayer('Sprite Layer', 3)
+spriteLayer.sprites = {
+	player = {
+		image = love.graphics.newImage('guy2.png'),
+		x = 16*0,
+		y = 16*0,
+		r = 0,
 	}
+}
+spriteLayer.update = function(self, dt)
+	local player = self.sprites.player
+	if love.keyboard.isDown('w') then
+		player.y = player.y - 16
+	elseif love.keyboard.isDown('a') then
+		player.x = player.x - 16
+	elseif love.keyboard.isDown('s') then
+		player.y = player.y + 16
+	elseif love.keyboard.isDown('d') then
+		player.x = player.x + 16
+	end
+end
+spriteLayer.draw = function(self)
+	for _, sprite in pairs(self.sprites) do
+		local x = math.floor(sprite.x)
+		local y = math.floor(sprite.y)
+		local r = sprite.r
+		love.graphics.draw(sprite.image, x, y, r)
+	end
 end
 
-local info_a = new_info('A', 100, 20, 10, 10, {actions.attack, actions.defend})
-local info_b = new_info('B', 100, 20, 10, 11, {actions.attack, actions.defend})
-local info_c = new_info('C', 100, 20, 10, 12, {actions.attack, actions.defend})
-local info_d = new_info('D', 100, 20, 10, 13, {actions.attack, actions.defend})
-local info_e = new_info('E', 100, 20, 10, 14, {actions.attack, actions.defend})
-local info_f = new_info('F', 100, 20, 10, 14, {actions.attack})
+-- -------------------------------------------------------------------------- --
+local character_infos = require('character_infos')
 
-local characters = {
-	Character:new()
-	:set_info(info_a),
+local battle
+local characters_menu_data
 
-	Character:new()
-	:set_info(info_b),
-
-	Character:new()
-	:set_info(info_c),
-
-	Character:new()
-	:set_info(info_d),
-
-	Character:new()
-	:set_info(info_e),
-
-	Character:new()
-	:set_info(info_f)
-}
-
-local function generate_actions (character)
+local function gui_generate_actions (character)
 	local actions = List:new()
 	for i, v in ipairs(character.info.actions) do
-		local bool = (i == 1) and true or false
-		actions:add(v.name, bool, v)
+		actions:add(v.name, i == 1, v)
 	end
 
 	return actions
 end
-
-local function generate_targets (characters)
+local function gui_generate_targets (characters)
 	local targets = List:new()
 	for i, v in ipairs(characters) do
-		local bool = (i == 1) and true or false
-		targets:add(v.info.name, bool, v)
+		targets:add(v.info.name, i == 1, v)
 	end
 
 	return targets
 end
+local function new_characters_menu_data (battle)
+	local characters_menu_data = {}
+	for i, v in ipairs(battle.groups.all) do
+		local t = {
+			character = v,
+			actions = gui_generate_actions(v),
+			targets = gui_generate_targets(battle.groups.all)
+		}
+		
+		table.insert(characters_menu_data, t)
+	end
 
-local characters_menu_data = {}
-for i, v in ipairs(characters) do
-	local t = {
-		character = v,
-		actions = generate_actions(v),
-		targets = generate_targets(characters)
-	}
-	
-	table.insert(characters_menu_data, t)
+	return characters_menu_data
 end
 
+
 local function iterate_list_selectables (list)
-	for i, v in ipairs(list.items.names) do
-		if imgui.Selectable_Bool(v, list.items.bools[i]) then
+	for i, v in ipairs(list.items) do
+		if imgui.Selectable_Bool(v.name, v.bool) then
 			list:select_index(i)
 		end
 	end
 end
 
-local battle_log = {}
+
+local action_info_new = function (action, context)
+
+	local action_info = {
+		action = function ()
+			return action:execute(context)
+		end,
+		actor = context.actor,
+		target = context.target,
+		turn = action.turn_modifer,
+		priority = action.priority,
+		speed = context.actor.info.spd + action.speed_modifier,
+	}
+
+	return action_info
+end
+
+
+local function action_priority_queue_insertion_sort (action_info)
+	local insertion_index
+	if not battle.action_priority_queue[battle.current_turn + action_info.turn] then
+		battle.action_priority_queue[battle.current_turn + action_info.turn] = {}
+	end
+	for i, v in ipairs(battle.action_priority_queue[battle.current_turn + action_info.turn]) do
+		if action_info.priority > v.priority then
+			insertion_index = i
+			break
+		elseif action_info.priority == v.priority then
+			if action_info.speed > v.speed then
+				insertion_index = i
+				break
+			end
+		end
+	end
+	insertion_index = insertion_index or (#battle.action_priority_queue[battle.current_turn + action_info.turn]+1)
+	table.insert(battle.action_priority_queue[battle.current_turn + action_info.turn], insertion_index, action_info)
+end
+
+
+local event = {
+	character_died = {
+		checker = function (self)
+			for i, v in ipairs(battle.groups.all) do
+				local message = self:condition(v)
+				if message then 
+					table.insert(battle.log, message) 
+				end
+			end
+		end,
+		condition = function (self, character)
+			if (character.info.is_dead == false) and (character.info.hp <= 0) then
+				return self:response(character)
+			end
+		end,
+		response = function (self, character)
+			character.info.is_dead = true
+			local message = ('%s %s'):format(
+				character.info.name, 
+				'died!'
+			)
+			return message
+		end,
+
+	},
+
+	allies_died = {
+		checker = function (self, group)
+			local message = self:condition(battle.groups.allies)
+			if message then 
+				table.insert(battle.log, message) 
+			end
+		end,
+		condition = function (self, group)
+			local dead_number = 0
+			for i, v in ipairs(group) do
+				if v.info.is_dead then 
+					dead_number = dead_number + 1
+				end
+			end
+			if dead_number == #group then
+				return self:response()
+			end
+		end,
+		response = function (self)
+			local message = 'Allies have all been defeated...'
+			return message
+		end,
+	},
+
+	enemies_died = {
+		checker = function (self, group)
+			local message = self:condition(battle.groups.enemies)
+			if message then 
+				table.insert(battle.log, message) 
+			end
+		end,
+		condition = function (self, group)
+			local dead_number = 0
+			for i, v in ipairs(group) do
+				if v.info.is_dead then 
+					dead_number = dead_number + 1
+				end
+			end
+			if dead_number == #group then
+				return self:response()
+			end
+		end,
+		response = function (self)
+			local message = 'Enemies have all been defeated!'
+			return message
+		end,
+	}
+}
+
+local active_events = {}
+table.insert(active_events, event.character_died)
+table.insert(active_events, event.allies_died)
+table.insert(active_events, event.enemies_died)
+
+
+local function turn_end ()
+	for i, v in ipairs(characters_menu_data) do
+		local action_index = v.actions:search('bool', true)
+		local target_index = v.targets:search('bool', true)
+
+		local character = v.character
+		local action = v.actions.items[action_index].pointer
+		local target = v.targets.items[target_index].pointer
+
+		local context = {
+			actor = v.character,
+			target = v.targets.items[target_index].pointer,
+		}
+
+		local action_info = action_info_new(action, context)
+		action_priority_queue_insertion_sort(action_info)
+	end
+
+	for i, v in ipairs(battle.action_priority_queue[battle.current_turn]) do
+		local message, chained_action = v.action()
+		if chained_action then
+			local context = {
+				actor = v.actor,
+				target = v.target,
+			}
+
+			local action_info = action_info_new(chained_action, context)
+			action_priority_queue_insertion_sort(action_info)
+		end
+		if message then
+			table.insert(battle.log, message)
+		end
+
+		for i, v in ipairs(active_events) do
+			v:checker()
+		end
+	end
+	battle.current_turn = battle.current_turn + 1
+end
+
+local canvas = love.graphics.newCanvas(800, 800, {type = "2d", format = "normal", readable = true})
 
 local imgui_tab_character = function (self)
     if imgui.BeginTabItem(self.character.info.name) then
@@ -183,9 +359,8 @@ local imgui_tab_character = function (self)
 		imgui.EndTabItem()
     end
 end
-
-local imgui_window_ally = function ()
-    if imgui.Begin('Allies') then
+local imgui_child_ally = function ()
+    if imgui.BeginChild_Str('Allies', imgui.ImVec2_Float(200,200), true) then
 		if imgui.BeginTabBar('') then
 
         	imgui_tab_character(characters_menu_data[1])
@@ -195,11 +370,10 @@ local imgui_window_ally = function ()
 			imgui.EndTabBar()
 		end
     end
-    imgui.End()
+    imgui.EndChild()
 end
-
-local imgui_window_enemy = function ()
-    if imgui.Begin('Enemies') then
+local imgui_child_enemy = function ()
+    if imgui.BeginChild_Str('Enemies', imgui.ImVec2_Float(200,200), true) then
 		if imgui.BeginTabBar('') then
 
         	imgui_tab_character(characters_menu_data[4])
@@ -209,64 +383,135 @@ local imgui_window_enemy = function ()
 			imgui.EndTabBar()
 		end
     end
-    imgui.End()
+    imgui.EndChild()
 end
-
-local imgui_window_manager = function ()
-    if imgui.Begin('Log') then
+local imgui_child_manager = function ()
+    if imgui.BeginChild_Str('Log', imgui.ImVec2_Float(200,200), true) then
+		imgui.Text(tostring(battle.current_turn))
 		if imgui.Button('End Turn') then
-			for i, v in ipairs(characters_menu_data) do
-				local character = v.character
-				local target_index
-				local action_index
-				for i2, v2 in ipairs(v.actions.items.bools) do
-					if v2 == true then
-						action_index = i2
-						break
-					end
-				end
-				for i2, v2 in ipairs(v.targets.items.bools) do
-					if v2 == true then
-						target_index = i2
-						break
-					end
-				end
-				local str = ''
-				str = str..character.info.name..' '
-				str = str..v.actions.items.names[action_index]..' '
-				str = str..v.targets.items.names[target_index]
-
-				v.actions.items.references[action_index].execute(character.info, v.targets.items.references[target_index].info)
-				table.insert(battle_log, str)
-			end
+			turn_end()
 		end
 
-		for i, v in ipairs(battle_log) do
+		for i, v in ipairs(battle.log) do
 			imgui.Text(v)
 		end
     end
-    imgui.End()
+    imgui.EndChild()
 end
+
+-- -------------------------------------------------------------------------- --
+
+local states = {
+	prototype = {
+		enter = function (self, machine, ...)
+
+		end,
+		exit = function (self, machine, ...)
+
+		end,
+		update = function (self, machine, ...)
+
+		end,
+		draw = function (self, machine, ...)
+
+		end,
+	},
+
+	map = {
+		enter = function (self, machine, ...)
+
+		end,
+		exit = function (self, machine, ...)
+
+		end,
+		update = function (self, machine, ...)
+			map:update(dt)
+		end,
+		draw = function (self, machine, ...)
+			love.graphics.setCanvas(canvas)
+				love.graphics.clear()
+				map:draw()
+			love.graphics.setCanvas()
+
+			imgui.Image(canvas, imgui.ImVec2_Float(800,800))
+		end,
+	},
+
+	battle = {
+		enter = function (self, machine, ...)
+			local characters = {
+				Character:new()
+				:set_info(character_infos.fighter),
+			
+				Character:new()
+				:set_info(character_infos.healer),
+			
+				Character:new()
+				:set_info(character_infos.mage),
+			
+				Character:new()
+				:set_info(character_infos.d),
+			
+				Character:new()
+				:set_info(character_infos.e),
+			
+				Character:new()
+				:set_info(character_infos.f)
+			}
+			battle = Battle:new(characters)
+			characters_menu_data = new_characters_menu_data(battle)
+		end,
+		exit = function (self, machine, ...)
+
+		end,
+		update = function (self, machine, ...)
+
+		end,
+		draw = function (self, machine, ...)
+			imgui_child_ally()
+			imgui.SameLine()
+			imgui_child_manager()
+			imgui.SameLine()
+			imgui_child_enemy()
+		end,
+	},
+}
+state_machine:new(states)
+state_machine:set_state('battle')
+
+local imgui_window = function ()
+	if imgui.Begin('All') then
+		if imgui.Button('Enter Battle') then
+			state_machine:set_state('battle')
+		end
+		imgui.SameLine()
+		if imgui.Button('Exit Battle') then
+			state_machine:set_state('map')
+		end
+
+		state_machine:draw()
+	end
+	imgui.End()
+end
+
+-- -------------------------------------------------------------------------- --
 
 love.load = function ()
     imgui.love.Init()
 end
-
 love.update = function (dt)
+	state_machine:update()
     imgui.love.Update(dt)
     imgui.NewFrame()
 end
-
 love.draw = function ()
     imgui.ShowDemoWindow()
-
-    imgui_window_ally()
-	imgui_window_enemy()
-	imgui_window_manager()
-    
+	imgui_window()
     imgui.Render()
     imgui.love.RenderDrawLists()
 end
+
+-- -------------------------------------------------------------------------- --
 
 love.mousemoved = function (x, y, ...)
     imgui.love.MouseMoved(x, y)
