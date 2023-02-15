@@ -302,6 +302,7 @@ local function turn_end ()
 		local context = {
 			actor = v.character,
 			target = v.targets.items[target_index].pointer,
+			battle = battle,
 		}
 
 		local action_info = action_info_new(action, context)
@@ -314,6 +315,7 @@ local function turn_end ()
 			local context = {
 				actor = v.actor,
 				target = v.target,
+				battle = battle,
 			}
 
 			local action_info = action_info_new(chained_action, context)

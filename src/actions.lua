@@ -103,9 +103,35 @@ actions.delayed_attack = Action:new{
 actions.burn_all = Action:new{
 	name = "Overheat",
 	execute = function (self, context)
-		
+		for i, v in ipairs(context.battle.groups.all) do
+			v.info.hp = v.info.hp - 1000
+		end
+
+		local message = self.name
+	end
+}
+
+actions.poison = Action:new{
+	name = "Poison",
+	priority = 0,
+	execute = function (self, context)
+	end
+}
+
+actions.counter = Action:new{
+	name = "Counter",
+	priority = 1,
+	execute = function (self, context)
+		-- Counter On
 	end,
-	chain = {}
+	chain = {
+		Action:new{
+			priority = -1,
+			execute = function (self, context)
+				-- Counter Off
+			end
+		}
+	}
 }
 
 return actions

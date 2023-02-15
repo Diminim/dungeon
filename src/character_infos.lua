@@ -15,7 +15,7 @@ local character_info_new = function (name, hp, str, def, spd, actions)
 	}
 end
 local character_infos = {
-	fighter = character_info_new('Fighter', 100, 20, 10, 10, {actions.attack, actions.slow_attack, actions.delayed_attack, actions.defend}),
+	fighter = character_info_new('Fighter', 100, 20, 10, 10, {actions.attack, actions.slow_attack, actions.delayed_attack, actions.burn_all, actions.defend}),
 	healer = character_info_new('Healer', 100, 20, 10, 11, {actions.attack, actions.heal, actions.defend}),
 	mage = character_info_new('Mage', 100, 20, 10, 12, {actions.attack, actions.defend}),
 	d = character_info_new('D', 100, 20, 10, 13, {actions.attack, actions.defend}),
