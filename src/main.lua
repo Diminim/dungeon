@@ -119,7 +119,7 @@ map.layers['Object Layer 1'].update = function(self)
 			end
 
 			local actual_x, actual_y, cols = world:move(v, goal_x, goal_y)
-			v.x, v.y = actualX, actualY
+			v.x, v.y = actual_x, actual_y
 		end
 	end
 end
