@@ -107,7 +107,7 @@ end
 
 map.layers['Object Layer 1'].update = function(self)
 	for i, v in ipairs(self.objects) do
-		if v.name == "player" then
+		if v.name == 'player' then
 			local goal_x, goal_y = v.x, v.y
 			if input:when_pressed(input.alias.up) then
 				goal_y = goal_y - 16
@@ -120,6 +120,11 @@ map.layers['Object Layer 1'].update = function(self)
 			end
 
 			local actual_x, actual_y, cols = world:move(v, goal_x, goal_y)
+			if cols[1] then
+				if cols[1].other.name == 'enemy' then
+					state_machine:set_state('battle')
+				end
+			end
 			v.x, v.y = actual_x, actual_y
 		end
 	end
