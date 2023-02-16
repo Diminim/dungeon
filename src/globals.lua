@@ -8,3 +8,5 @@ tablex = require('lib/batteries/tablex')
 state_machine = require('lib/batteries/state_machine')
 
 sti = require('lib/sti')
+
+bump =  require('lib/bump')

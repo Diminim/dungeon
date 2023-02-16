@@ -92,9 +92,53 @@ local Battle = {
 
 }
 
+
+
 -- -------------------------------------------------------------------------- --
 
 local map = sti('maps/map/tiles.lua')
+
+local world = bump.newWorld(16)
+
+for k, v in pairs(map.objects) do
+	world:add(v, v.x, v.y, 16, 16)
+end
+
+map.layers['Object Layer 1'].update = function(self)
+	for i, v in ipairs(self.objects) do
+		if v.name == "Player" then
+			local goal_x, goal_y = v.x, v.y
+			if love.keyboard.isDown('w') then
+				goal_y = goal_y - 16
+			elseif love.keyboard.isDown('a') then
+				goal_x = goal_x - 16
+			elseif love.keyboard.isDown('s') then
+				goal_y = goal_y + 16
+			elseif love.keyboard.isDown('d') then
+				goal_x = goal_x + 16
+			end
+
+			local actual_x, actual_y, cols = world:move(v, goal_x, goal_y)
+			v.x, v.y = actualX, actualY
+		end
+	end
+end
+
+map.layers['Object Layer 1'].draw = function(self)
+	for i, v in ipairs(self.objects) do
+		love.graphics.rectangle('fill', v.x, v.y, 16, 16)
+	end
+end
+
+
+
+
+
+-- -------------------------------------------------------------------------- --
+
+
+
+--[[
 local sprite_layer = map:addCustomLayer('Sprite Layer', 3)
 sprite_layer.sprites = {
 	player = {
@@ -120,14 +164,13 @@ sprite_layer.draw = function(self)
 	for _, sprite in pairs(self.sprites) do
 		local x = math.floor(sprite.x)
 		local y = math.floor(sprite.y)
-		local r = sprite.r
 		love.graphics.draw(sprite.image, x, y, r)
 	end
 end
+--]]
 
 -- -------------------------------------------------------------------------- --
-local character_infos = require('character_infos')
-local events = require('events')
+
 
 
 local function gui_generate_actions (character)
@@ -317,6 +360,8 @@ local imgui_child_manager = function (battle)
 end
 
 -- -------------------------------------------------------------------------- --
+local character_infos = require('character_infos')
+local events = require('events')
 
 local states = {
 	prototype = {
@@ -399,7 +444,7 @@ local states = {
 	},
 }
 state_machine:new(states)
-state_machine:set_state('battle')
+state_machine:set_state('map')
 
 -- -------------------------------------------------------------------------- --
 

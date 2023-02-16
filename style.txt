@@ -21,6 +21,8 @@ Try to phrase functions that operate on a datastructure but don't belong to a cl
 
 If a group of functions refer to eachother, they should be bound in a table that passes self to the methods.
 
+If a group of functions take the same arguments, they should probably be in a table together with the data.
+
 
 git commits you don't have a description for get a single .
 if all you did is refactor and can't think of a description, say refactor
