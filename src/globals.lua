@@ -56,6 +56,17 @@ input = {
         ["9"] = false,
         ["0"] = false,
     },
+    key_alias = {
+        left = 'a',
+        right = 'd',
+        up = 'w',
+        down = 's',
+
+        a = 'm',
+        b = 'n'
+    },
+    -- buffer = {},
+    -- command_list = {}
 
     update = function (self)
         for k, v in pairs(self.keys_down_last_frame) do

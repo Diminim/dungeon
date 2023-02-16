@@ -108,13 +108,13 @@ map.layers['Object Layer 1'].update = function(self)
 	for i, v in ipairs(self.objects) do
 		if v.name == "Player" then
 			local goal_x, goal_y = v.x, v.y
-			if love.keyboard.isDown('w') then
+			if input:when_pressed(input.key_alias.up) then
 				goal_y = goal_y - 16
-			elseif love.keyboard.isDown('a') then
+			elseif input:when_pressed(input.key_alias.left) then
 				goal_x = goal_x - 16
-			elseif love.keyboard.isDown('s') then
+			elseif input:when_pressed(input.key_alias.down) then
 				goal_y = goal_y + 16
-			elseif love.keyboard.isDown('d') then
+			elseif input:when_pressed(input.key_alias.right) then
 				goal_x = goal_x + 16
 			end
 
@@ -472,6 +472,7 @@ love.update = function (dt)
 	state_machine:update()
     imgui.love.Update(dt)
     imgui.NewFrame()
+	input:update()
 end
 love.draw = function ()
     imgui.ShowDemoWindow()
