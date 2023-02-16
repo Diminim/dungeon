@@ -141,48 +141,6 @@ end
 -- -------------------------------------------------------------------------- --
 
 
-
-local function gui_generate_actions (character)
-	local actions = List:new()
-	for i, v in ipairs(character.info.actions) do
-		actions:add(v.name, i == 1, v)
-	end
-
-	return actions
-end
-local function gui_generate_targets (characters)
-	local targets = List:new()
-	for i, v in ipairs(characters) do
-		targets:add(v.info.name, i == 1, v)
-	end
-
-	return targets
-end
-local function new_characters_menu_data (battle)
-	local characters_menu_data = {}
-	for i, v in ipairs(battle.groups.all) do
-		local t = {
-			character = v,
-			actions = gui_generate_actions(v),
-			targets = gui_generate_targets(battle.groups.all)
-		}
-		
-		table.insert(characters_menu_data, t)
-	end
-
-	return characters_menu_data
-end
-
-
-local function iterate_list_selectables (list)
-	for i, v in ipairs(list.items) do
-		if imgui.Selectable_Bool(v.name, v.bool) then
-			list:select_index(i)
-		end
-	end
-end
-
-
 local action_info_new = function (action, context)
 
 	local action_info = {
@@ -217,10 +175,85 @@ local action_priority_queue_insertion_sort = function (battle, action_info)
 	insertion_index = insertion_index or (#battle.action_priority_queue[battle.current_turn + action_info.turn]+1)
 	table.insert(battle.action_priority_queue[battle.current_turn + action_info.turn], insertion_index, action_info)
 end
+local turn_end = function (battle)
+	for i, v in ipairs(battle.characters_menu_data) do
+		local action_index = v.actions:search('bool', true)
+		local target_index = v.targets:search('bool', true)
 
+		local character = v.character
+		local action = v.actions.items[action_index].pointer
+		local target = v.targets.items[target_index].pointer
 
+		local context = {
+			actor = v.character,
+			target = v.targets.items[target_index].pointer,
+			battle = battle,
+		}
 
+		local action_info = action_info_new(action, context)
+		action_priority_queue_insertion_sort(battle, action_info)
+	end
 
+	for i, v in ipairs(battle.action_priority_queue[battle.current_turn]) do
+		local message, chained_action = v.action()
+		if chained_action then
+			local context = {
+				actor = v.actor,
+				target = v.target,
+				battle = battle,
+			}
+
+			local action_info = action_info_new(chained_action, context)
+			action_priority_queue_insertion_sort(battle, action_info)
+		end
+		if message then
+			table.insert(battle.log, message)
+		end
+		for i, v in ipairs(battle.active_events) do
+			v(battle)
+		end
+	end
+	battle.current_turn = battle.current_turn + 1
+end
+
+local function gui_generate_actions (character)
+	local actions = List:new()
+	for i, v in ipairs(character.info.actions) do
+		actions:add(v.name, i == 1, v)
+	end
+
+	return actions
+end
+local function gui_generate_targets (characters)
+	local targets = List:new()
+	for i, v in ipairs(characters) do
+		targets:add(v.info.name, i == 1, v)
+	end
+
+	return targets
+end
+local function new_characters_menu_data (battle)
+	local characters_menu_data = {}
+	for i, v in ipairs(battle.groups.all) do
+		local t = {
+			character = v,
+			actions = gui_generate_actions(v),
+			targets = gui_generate_targets(battle.groups.all)
+		}
+		
+		table.insert(characters_menu_data, t)
+	end
+
+	return characters_menu_data
+end
+
+local function iterate_list_selectables (list)
+	for i, v in ipairs(list.items) do
+		if imgui.Selectable_Bool(v.name, v.bool) then
+			list:select_index(i)
+		end
+	end
+end
 local imgui_tab_character = function (self)
     if imgui.BeginTabItem(self.character.info.name) then
 
@@ -273,46 +306,6 @@ local imgui_child_enemy = function (battle)
 		end
     end
     imgui.EndChild()
-end
-local turn_end = function (battle)
-	for i, v in ipairs(battle.characters_menu_data) do
-		local action_index = v.actions:search('bool', true)
-		local target_index = v.targets:search('bool', true)
-
-		local character = v.character
-		local action = v.actions.items[action_index].pointer
-		local target = v.targets.items[target_index].pointer
-
-		local context = {
-			actor = v.character,
-			target = v.targets.items[target_index].pointer,
-			battle = battle,
-		}
-
-		local action_info = action_info_new(action, context)
-		action_priority_queue_insertion_sort(battle, action_info)
-	end
-
-	for i, v in ipairs(battle.action_priority_queue[battle.current_turn]) do
-		local message, chained_action = v.action()
-		if chained_action then
-			local context = {
-				actor = v.actor,
-				target = v.target,
-				battle = battle,
-			}
-
-			local action_info = action_info_new(chained_action, context)
-			action_priority_queue_insertion_sort(battle, action_info)
-		end
-		if message then
-			table.insert(battle.log, message)
-		end
-		for i, v in ipairs(battle.active_events) do
-			v(battle)
-		end
-	end
-	battle.current_turn = battle.current_turn + 1
 end
 local imgui_child_manager = function (battle)
     if imgui.BeginChild_Str('Log', imgui.ImVec2_Float(200,200), true) then
