@@ -129,9 +129,6 @@ end
 local character_infos = require('character_infos')
 local events = require('events')
 
-local battle
-
-
 
 local function gui_generate_actions (character)
 	local actions = List:new()
@@ -189,7 +186,7 @@ local action_info_new = function (action, context)
 
 	return action_info
 end
-local action_priority_queue_insertion_sort = function (action_info)
+local action_priority_queue_insertion_sort = function (battle, action_info)
 	local insertion_index
 	if not battle.action_priority_queue[battle.current_turn + action_info.turn] then
 		battle.action_priority_queue[battle.current_turn + action_info.turn] = {}
@@ -239,7 +236,7 @@ local imgui_tab_character = function (self)
 		imgui.EndTabItem()
     end
 end
-local imgui_child_ally = function ()
+local imgui_child_ally = function (battle)
     if imgui.BeginChild_Str('Allies', imgui.ImVec2_Float(200,200), true) then
 		if imgui.BeginTabBar('') then
 
@@ -252,7 +249,7 @@ local imgui_child_ally = function ()
     end
     imgui.EndChild()
 end
-local imgui_child_enemy = function ()
+local imgui_child_enemy = function (battle)
     if imgui.BeginChild_Str('Enemies', imgui.ImVec2_Float(200,200), true) then
 		if imgui.BeginTabBar('') then
 
@@ -265,7 +262,7 @@ local imgui_child_enemy = function ()
     end
     imgui.EndChild()
 end
-local turn_end = function ()
+local turn_end = function (battle)
 	for i, v in ipairs(battle.characters_menu_data) do
 		local action_index = v.actions:search('bool', true)
 		local target_index = v.targets:search('bool', true)
@@ -281,7 +278,7 @@ local turn_end = function ()
 		}
 
 		local action_info = action_info_new(action, context)
-		action_priority_queue_insertion_sort(action_info)
+		action_priority_queue_insertion_sort(battle, action_info)
 	end
 
 	for i, v in ipairs(battle.action_priority_queue[battle.current_turn]) do
@@ -294,7 +291,7 @@ local turn_end = function ()
 			}
 
 			local action_info = action_info_new(chained_action, context)
-			action_priority_queue_insertion_sort(action_info)
+			action_priority_queue_insertion_sort(battle, action_info)
 		end
 		if message then
 			table.insert(battle.log, message)
@@ -305,11 +302,11 @@ local turn_end = function ()
 	end
 	battle.current_turn = battle.current_turn + 1
 end
-local imgui_child_manager = function ()
+local imgui_child_manager = function (battle)
     if imgui.BeginChild_Str('Log', imgui.ImVec2_Float(200,200), true) then
 		imgui.Text(tostring(battle.current_turn))
 		if imgui.Button('End Turn') then
-			turn_end()
+			turn_end(battle)
 		end
 
 		for i, v in ipairs(battle.log) do
@@ -359,6 +356,7 @@ local states = {
 	},
 
 	battle = {
+		battle = nil,
 		enter = function (self, machine, ...)
 			local characters = {
 				Character:new()
@@ -379,11 +377,11 @@ local states = {
 				Character:new()
 				:set_info(character_infos.f)
 			}
-			battle = Battle:new(characters)
-			table.insert(battle.active_events, events.character_died)
-			table.insert(battle.active_events, events.allies_died)
-			table.insert(battle.active_events, events.enemies_died)
-			battle.characters_menu_data = new_characters_menu_data(battle)
+			self.battle = Battle:new(characters)
+			table.insert(self.battle.active_events, events.character_died)
+			table.insert(self.battle.active_events, events.allies_died)
+			table.insert(self.battle.active_events, events.enemies_died)
+			self.battle.characters_menu_data = new_characters_menu_data(self.battle)
 		end,
 		exit = function (self, machine, ...)
 
@@ -392,11 +390,11 @@ local states = {
 
 		end,
 		draw = function (self, machine, ...)
-			imgui_child_ally()
+			imgui_child_ally(self.battle)
 			imgui.SameLine()
-			imgui_child_manager()
+			imgui_child_manager(self.battle)
 			imgui.SameLine()
-			imgui_child_enemy()
+			imgui_child_enemy(self.battle)
 		end,
 	},
 }
