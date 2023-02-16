@@ -332,86 +332,93 @@ end
 local character_infos = require('character_infos')
 local events = require('events')
 
-local states = {
-	prototype = {
-		enter = function (self, machine, ...)
+local states = {}
+states.prototype = {
+	init = function (self)
 
-		end,
-		exit = function (self, machine, ...)
+	end,
+	enter = function (self, machine, ...)
 
-		end,
-		update = function (self, machine, ...)
+	end,
+	exit = function (self, machine, ...)
 
-		end,
-		draw = function (self, machine, ...)
+	end,
+	update = function (self, machine, ...)
 
-		end,
-	},
+	end,
+	draw = function (self, machine, ...)
 
-	map = {
-		canvas = love.graphics.newCanvas(800, 800, {type = "2d", format = "normal", readable = true}),
-		enter = function (self, machine, ...)
-
-		end,
-		exit = function (self, machine, ...)
-
-		end,
-		update = function (self, machine, ...)
-			map:update(dt)
-		end,
-		draw = function (self, machine, ...)
-			love.graphics.setCanvas(self.canvas)
-				love.graphics.clear()
-				map:draw()
-			love.graphics.setCanvas()
-
-			imgui.Image(self.canvas, imgui.ImVec2_Float(800,800))
-		end,
-	},
-
-	battle = {
-		battle = nil,
-		enter = function (self, machine, ...)
-			local characters = {
-				Character:new()
-				:set_info(character_infos.fighter),
-			
-				Character:new()
-				:set_info(character_infos.healer),
-			
-				Character:new()
-				:set_info(character_infos.mage),
-			
-				Character:new()
-				:set_info(character_infos.d),
-			
-				Character:new()
-				:set_info(character_infos.e),
-			
-				Character:new()
-				:set_info(character_infos.f)
-			}
-			self.battle = Battle:new(characters)
-			table.insert(self.battle.active_events, events.character_died)
-			table.insert(self.battle.active_events, events.allies_died)
-			table.insert(self.battle.active_events, events.enemies_died)
-			self.battle.characters_menu_data = new_characters_menu_data(self.battle)
-		end,
-		exit = function (self, machine, ...)
-
-		end,
-		update = function (self, machine, ...)
-
-		end,
-		draw = function (self, machine, ...)
-			imgui_child_ally(self.battle)
-			imgui.SameLine()
-			imgui_child_manager(self.battle)
-			imgui.SameLine()
-			imgui_child_enemy(self.battle)
-		end,
-	},
+	end,
 }
+states.map = {
+	init = function (self)
+		self.canvas = love.graphics.newCanvas(800, 800, {type = "2d", format = "normal", readable = true})
+	end,
+	enter = function (self, machine, ...)
+
+	end,
+	exit = function (self, machine, ...)
+
+	end,
+	update = function (self, machine, ...)
+		map:update(dt)
+	end,
+	draw = function (self, machine, ...)
+		love.graphics.setCanvas(self.canvas)
+			love.graphics.clear()
+			map:draw()
+		love.graphics.setCanvas()
+
+		imgui.Image(self.canvas, imgui.ImVec2_Float(800,800))
+	end,
+}
+states.battle = {
+	init = function (self)
+		self.battle = nil
+	end,
+	enter = function (self, machine, ...)
+		local characters = {
+			Character:new()
+			:set_info(character_infos.fighter),
+		
+			Character:new()
+			:set_info(character_infos.healer),
+		
+			Character:new()
+			:set_info(character_infos.mage),
+		
+			Character:new()
+			:set_info(character_infos.d),
+		
+			Character:new()
+			:set_info(character_infos.e),
+		
+			Character:new()
+			:set_info(character_infos.f)
+		}
+		self.battle = Battle:new(characters)
+		table.insert(self.battle.active_events, events.character_died)
+		table.insert(self.battle.active_events, events.allies_died)
+		table.insert(self.battle.active_events, events.enemies_died)
+		self.battle.characters_menu_data = new_characters_menu_data(self.battle)
+	end,
+	exit = function (self, machine, ...)
+
+	end,
+	update = function (self, machine, ...)
+
+	end,
+	draw = function (self, machine, ...)
+		imgui_child_ally(self.battle)
+		imgui.SameLine()
+		imgui_child_manager(self.battle)
+		imgui.SameLine()
+		imgui_child_enemy(self.battle)
+	end,
+}
+for k, v in pairs(states) do
+	v:init()
+end
 state_machine:new(states)
 state_machine:set_state('map')
 
