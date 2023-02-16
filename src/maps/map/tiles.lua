@@ -10,7 +10,7 @@ return {
   tilewidth = 16,
   tileheight = 16,
   nextlayerid = 3,
-  nextobjectid = 18,
+  nextobjectid = 23,
   properties = {},
   tilesets = {
     {
@@ -99,28 +99,44 @@ return {
       properties = {},
       objects = {
         {
-          id = 14,
-          name = "Wall",
+          id = 20,
+          name = "player",
           class = "",
           shape = "rectangle",
-          x = 128,
-          y = 128,
+          x = 96,
+          y = 80,
           width = 16,
           height = 16,
           rotation = 0,
+          gid = 1103,
           visible = true,
           properties = {}
         },
         {
-          id = 17,
-          name = "Player",
+          id = 21,
+          name = "enemy",
           class = "",
           shape = "rectangle",
-          x = 64,
-          y = 96,
+          x = 160,
+          y = 80,
           width = 16,
           height = 16,
           rotation = 0,
+          gid = 283,
+          visible = true,
+          properties = {}
+        },
+        {
+          id = 22,
+          name = "wall",
+          class = "",
+          shape = "rectangle",
+          x = 128,
+          y = 176,
+          width = 16,
+          height = 16,
+          rotation = 0,
+          gid = 523,
           visible = true,
           properties = {}
         }

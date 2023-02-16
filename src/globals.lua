@@ -56,7 +56,7 @@ input = {
         ["9"] = false,
         ["0"] = false,
     },
-    key_alias = {
+    alias = {
         left = 'a',
         right = 'd',
         up = 'w',

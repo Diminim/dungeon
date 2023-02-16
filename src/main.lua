@@ -96,6 +96,7 @@ local Battle = {
 
 -- -------------------------------------------------------------------------- --
 
+local map_texture = love.graphics.newImage('maps/map/tiles.png')
 local map = sti('maps/map/tiles.lua')
 
 local world = bump.newWorld(16)
@@ -106,15 +107,15 @@ end
 
 map.layers['Object Layer 1'].update = function(self)
 	for i, v in ipairs(self.objects) do
-		if v.name == "Player" then
+		if v.name == "player" then
 			local goal_x, goal_y = v.x, v.y
-			if input:when_pressed(input.key_alias.up) then
+			if input:when_pressed(input.alias.up) then
 				goal_y = goal_y - 16
-			elseif input:when_pressed(input.key_alias.left) then
+			elseif input:when_pressed(input.alias.left) then
 				goal_x = goal_x - 16
-			elseif input:when_pressed(input.key_alias.down) then
+			elseif input:when_pressed(input.alias.down) then
 				goal_y = goal_y + 16
-			elseif input:when_pressed(input.key_alias.right) then
+			elseif input:when_pressed(input.alias.right) then
 				goal_x = goal_x + 16
 			end
 
@@ -126,48 +127,11 @@ end
 
 map.layers['Object Layer 1'].draw = function(self)
 	for i, v in ipairs(self.objects) do
-		love.graphics.rectangle('fill', v.x, v.y, 16, 16)
+		local quad = map.tiles[v.gid].quad
+		love.graphics.draw(map_texture, quad, v.x, v.y)
 	end
 end
 
-
-
-
-
--- -------------------------------------------------------------------------- --
-
-
-
---[[
-local sprite_layer = map:addCustomLayer('Sprite Layer', 3)
-sprite_layer.sprites = {
-	player = {
-		image = love.graphics.newImage('guy2.png'),
-		x = 16*0,
-		y = 16*0,
-		r = 0,
-	}
-}
-sprite_layer.update = function(self, dt)
-	local player = self.sprites.player
-	if love.keyboard.isDown('w') then
-		player.y = player.y - 16
-	elseif love.keyboard.isDown('a') then
-		player.x = player.x - 16
-	elseif love.keyboard.isDown('s') then
-		player.y = player.y + 16
-	elseif love.keyboard.isDown('d') then
-		player.x = player.x + 16
-	end
-end
-sprite_layer.draw = function(self)
-	for _, sprite in pairs(self.sprites) do
-		local x = math.floor(sprite.x)
-		local y = math.floor(sprite.y)
-		love.graphics.draw(sprite.image, x, y, r)
-	end
-end
---]]
 
 -- -------------------------------------------------------------------------- --
 
