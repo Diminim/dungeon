@@ -9,7 +9,9 @@ state_machine = require('lib/batteries/state_machine')
 
 sti = require('lib/sti')
 
-bump =  require('lib/bump')
+bump = require('lib/bump')
+
+bitser = require('lib/bitser')
 
 input = {
     keys_down_last_frame = {

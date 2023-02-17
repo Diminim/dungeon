@@ -188,8 +188,17 @@ local Battle = {
 
 -- -------------------------------------------------------------------------- --
 
+local actions = require('actions')
 local character_infos = require('character_infos')
 local events = require('events')
+
+local saved_characters = {
+	fighter = tablex.shallow_copy(character_infos.fighter),
+
+	healer = tablex.shallow_copy(character_infos.healer),
+
+	mage = tablex.shallow_copy(character_infos.mage),
+}
 
 local states = {}
 states.prototype = {
@@ -354,13 +363,13 @@ states.battle = {
 	enter = function (self, machine, ...)
 		local characters = {
 			Character:new()
-			:set_info(character_infos.fighter),
-		
+			:set_info(saved_characters.fighter),
+
 			Character:new()
-			:set_info(character_infos.healer),
-		
+			:set_info(saved_characters.mage),
+
 			Character:new()
-			:set_info(character_infos.mage),
+			:set_info(saved_characters.healer),
 		
 			Character:new()
 			:set_info(character_infos.d),
@@ -437,6 +446,16 @@ local imgui_window = function ()
 		imgui.SameLine()
 		if imgui.Button('Exit Battle') then
 			state_machine:set_state('map')
+		end
+		imgui.SameLine()
+		if imgui.Button('Save Game') then
+			--bitser.registerClass('Character', Character)
+			--bitser.register
+			--bitser.dumps(saved_characters)
+		end
+		imgui.SameLine()
+		if imgui.Button('Load Game') then
+			
 		end
 
 		state_machine:draw()
