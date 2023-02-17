@@ -100,11 +100,37 @@ actions.delayed_attack = Action:new{
 	end
 }
 
-actions.burn_all = Action:new{
-	name = "Overheat",
+actions.kill_all = Action:new{
+	name = "Kill All",
 	execute = function (self, context)
 		for i, v in ipairs(context.battle.groups.all) do
 			v.info.hp = v.info.hp - 1000
+		end
+
+		local message = self.name
+
+		return message
+	end
+}
+
+actions.kill_enemies = Action:new{
+	name = "Kill Enemies",
+	execute = function (self, context)
+		for i, v in ipairs(context.battle.groups.enemies) do
+			v.info.hp = 0
+		end
+
+		local message = self.name
+
+		return message
+	end
+}
+
+actions.kill_allies = Action:new{
+	name = "Kill Allies",
+	execute = function (self, context)
+		for i, v in ipairs(context.battle.groups.allies) do
+			v.info.hp = 0
 		end
 
 		local message = self.name

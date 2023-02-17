@@ -25,6 +25,10 @@ local events = {
 		if dead_number == #battle.groups.allies then
 			local message = 'Allies have been defeated...'
 			table.insert(battle.log, message)
+			battle.should_exit = true
+			battle.exit_func = function (machine)
+				state_machine:set_state('game_over')
+			end
 		end
 	end,
 
@@ -38,6 +42,10 @@ local events = {
 		if dead_number == #battle.groups.enemies then
 			local message = 'Enemies have been defeated!'
 			table.insert(battle.log, message)
+			battle.should_exit = true
+			battle.exit_func = function (machine)
+				state_machine:set_state('victory')
+			end
 		end
 	end,
 }

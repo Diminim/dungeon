@@ -133,6 +133,8 @@ local Battle = {
 		self.log = {}
 		self.groups = {}
 		self.active_events = {}
+		self.should_exit = false
+		self.exit_func = function (machine) end
 
 		self:init_groups()
 	end,
@@ -223,6 +225,46 @@ states.prototype = {
 	end,
 	draw = function (self, machine, ...)
 
+	end,
+}
+states.title = {
+	init = function (self, machine, ...)
+
+	end,
+	enter = function (self, machine, ...)
+
+	end,
+	exit = function (self, machine, ...)
+
+	end,
+	update = function (self, machine, ...)
+
+	end,
+	draw = function (self, machine, ...)
+		imgui.Text('Title')
+		if imgui.Button('Play') then
+			state_machine:set_state('town')
+		end
+	end,
+}
+states.town = {
+	init = function (self, machine, ...)
+
+	end,
+	enter = function (self, machine, ...)
+
+	end,
+	exit = function (self, machine, ...)
+
+	end,
+	update = function (self, machine, ...)
+
+	end,
+	draw = function (self, machine, ...)
+		imgui.Text('Town')
+		if imgui.Button('Enter Dungeon') then
+			state_machine:set_state('map')
+		end
 	end,
 }
 states.map = {
@@ -422,7 +464,9 @@ states.battle = {
 
 	end,
 	update = function (self, machine, ...)
-
+		if self.battle.should_exit then
+			self.battle.exit_func(machine)
+		end
 	end,
 	draw = function (self, machine, ...)
 		self.gui:ally(self.battle)
@@ -432,11 +476,51 @@ states.battle = {
 		self.gui:enemy(self.battle)
 	end,
 }
+states.game_over = {
+	init = function (self, machine, ...)
+
+	end,
+	enter = function (self, machine, ...)
+
+	end,
+	exit = function (self, machine, ...)
+
+	end,
+	update = function (self, machine, ...)
+
+	end,
+	draw = function (self, machine, ...)
+		imgui.Text('Game Over')
+		if imgui.Button('Confirm') then
+			state_machine:set_state('title')
+		end
+	end,
+}
+states.victory = {
+	init = function (self, machine, ...)
+
+	end,
+	enter = function (self, machine, ...)
+
+	end,
+	exit = function (self, machine, ...)
+
+	end,
+	update = function (self, machine, ...)
+
+	end,
+	draw = function (self, machine, ...)
+		imgui.Text('Victory!')
+		if imgui.Button('Confirm') then
+			state_machine:set_state('map')
+		end
+	end,
+}
 state_machine:new(states)
 for k, v in pairs(states) do
 	v:init(state_machine)
 end
-state_machine:set_state('map')
+state_machine:set_state('title')
 
 -- -------------------------------------------------------------------------- --
 
@@ -456,6 +540,11 @@ local imgui_window = function ()
 		imgui.SameLine()
 		if imgui.Button('Load Game') then
 			saved_characters = bitser.loadLoveFile('save.dat')
+		end
+		if imgui.Button('Heal Party') then
+			for k, v in pairs(saved_characters) do
+				v.info.hp = v.info.max_hp
+			end
 		end
 
 		state_machine:draw()
