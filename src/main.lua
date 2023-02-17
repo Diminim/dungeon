@@ -187,17 +187,24 @@ local Battle = {
 }
 
 -- -------------------------------------------------------------------------- --
-
 local actions = require('actions')
 local character_infos = require('character_infos')
 local events = require('events')
 
+bitser.registerClass('Character', Character, getmetatable(Character:new()), nil, setmetatable)
+for k, v in pairs(actions) do
+	bitser.register(k, v)
+end
+
 local saved_characters = {
-	fighter = tablex.shallow_copy(character_infos.fighter),
+	fighter = Character:new()
+	:set_info(character_infos.fighter),
 
-	healer = tablex.shallow_copy(character_infos.healer),
+	healer = Character:new()
+	:set_info(character_infos.healer),
 
-	mage = tablex.shallow_copy(character_infos.mage),
+	mage = Character:new()
+	:set_info(character_infos.mage),
 }
 
 local states = {}
@@ -362,14 +369,9 @@ states.battle = {
 	end,
 	enter = function (self, machine, ...)
 		local characters = {
-			Character:new()
-			:set_info(saved_characters.fighter),
-
-			Character:new()
-			:set_info(saved_characters.mage),
-
-			Character:new()
-			:set_info(saved_characters.healer),
+			saved_characters.fighter,
+			saved_characters.healer,
+			saved_characters.mage,
 		
 			Character:new()
 			:set_info(character_infos.d),
@@ -449,13 +451,11 @@ local imgui_window = function ()
 		end
 		imgui.SameLine()
 		if imgui.Button('Save Game') then
-			--bitser.registerClass('Character', Character)
-			--bitser.register
-			--bitser.dumps(saved_characters)
+			bitser.dumpLoveFile('save.dat', saved_characters)
 		end
 		imgui.SameLine()
 		if imgui.Button('Load Game') then
-			
+			saved_characters = bitser.loadLoveFile('save.dat')
 		end
 
 		state_machine:draw()
