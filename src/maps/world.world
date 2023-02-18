@@ -1,0 +1,27 @@
+{
+    "maps": [
+        {
+            "fileName": "tiles_1.tmx",
+            "height": 320,
+            "width": 320,
+            "x": 0,
+            "y": 0
+        },
+        {
+            "fileName": "tiles_2.tmx",
+            "height": 320,
+            "width": 320,
+            "x": 320,
+            "y": 0
+        },
+        {
+            "fileName": "tiles_3.tmx",
+            "height": 320,
+            "width": 320,
+            "x": 640,
+            "y": 0
+        }
+    ],
+    "onlyShowAdjacentMaps": false,
+    "type": "world"
+}

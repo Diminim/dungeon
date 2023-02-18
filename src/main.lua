@@ -242,7 +242,11 @@ states.title = {
 	end,
 	draw = function (self, machine, ...)
 		imgui.Text('Title')
-		if imgui.Button('Play') then
+		if imgui.Button('New Game') then
+			state_machine:set_state('town')
+		end
+		if imgui.Button('Load Game') then
+			saved_characters = bitser.loadLoveFile('save.dat')
 			state_machine:set_state('town')
 		end
 	end,
@@ -262,6 +266,14 @@ states.town = {
 	end,
 	draw = function (self, machine, ...)
 		imgui.Text('Town')
+		if imgui.Button('Save Game') then
+			bitser.dumpLoveFile('save.dat', saved_characters)
+		end
+		if imgui.Button('Heal Party') then
+			for k, v in pairs(saved_characters) do
+				v.info.hp = v.info.max_hp
+			end
+		end
 		if imgui.Button('Enter Dungeon') then
 			state_machine:set_state('map')
 		end
@@ -269,46 +281,67 @@ states.town = {
 }
 states.map = {
 	init = function (self, machine, ...)
-		self.canvas = love.graphics.newCanvas(800, 800, {type = "2d", format = "normal", readable = true})
+		self.canvas = love.graphics.newCanvas(400, 400, {type = "2d", format = "normal", readable = true})
 
-		local map_texture = love.graphics.newImage('maps/map/tiles.png')
-		local map = sti('maps/map/tiles.lua')
-		local world = bump.newWorld(16)
-		for k, v in pairs(map.objects) do
-			world:add(v, v.x, v.y, 16, 16)
-		end
-		map.layers['Object Layer 1'].update = function(self)
-			for i, v in ipairs(self.objects) do
-				if v.name == 'player' then
-					local goal_x, goal_y = v.x, v.y
-					if input:when_pressed(input.alias.up) then
-						goal_y = goal_y - 16
-					elseif input:when_pressed(input.alias.left) then
-						goal_x = goal_x - 16
-					elseif input:when_pressed(input.alias.down) then
-						goal_y = goal_y + 16
-					elseif input:when_pressed(input.alias.right) then
-						goal_x = goal_x + 16
-					end
+		local map_texture = love.graphics.newImage('maps/tiles.png')
+		local maps = {
+			current_index = 1,
 
-					local actual_x, actual_y, cols = world:move(v, goal_x, goal_y)
-					if cols[1] then
-						if cols[1].other.name == 'enemy' then
+			sti('maps/tiles_1.lua'),
+			sti('maps/tiles_2.lua'),
+			sti('maps/tiles_3.lua'),
+		}
+
+
+		for i, map in ipairs(maps) do
+			map.world = bump.newWorld(16)
+
+			for k2, v2 in pairs(map.objects) do
+				map.world:add(v2, v2.x, v2.y, 16, 16)
+			end
+
+			map.layers['Object Layer 1'].update = function(self)
+				for i2, v2 in ipairs(self.objects) do
+					if v2.name == 'player' then
+						local goal_x, goal_y = v2.x, v2.y
+						if input:when_pressed(input.alias.up) then
+							goal_y = goal_y - 16
+						elseif input:when_pressed(input.alias.left) then
+							goal_x = goal_x - 16
+						elseif input:when_pressed(input.alias.down) then
+							goal_y = goal_y + 16
+						elseif input:when_pressed(input.alias.right) then
+							goal_x = goal_x + 16
+						end
+	
+						local actual_x, actual_y, cols = map.world:move(v2, goal_x, goal_y)
+						if cols[1] and cols[1].other.name == 'enemy' then
 							machine:set_state('battle')
 						end
+	
+						if cols[1] and cols[1].other.name == 'stair_up' then
+							if maps.current_index ~= 1 then
+								maps.current_index = maps.current_index - 1
+							else
+								machine:set_state('town')
+							end
+						end
+						if cols[1] and cols[1].other.name == 'stair_down' then
+							maps.current_index = maps.current_index + 1
+						end
+						v2.x, v2.y = actual_x, actual_y
 					end
-					v.x, v.y = actual_x, actual_y
+				end
+			end
+			map.layers['Object Layer 1'].draw = function(self)
+				for i2, v2 in ipairs(self.objects) do
+					local quad = map.tiles[v2.gid].quad
+					love.graphics.draw(map_texture, quad, v2.x, v2.y)
 				end
 			end
 		end
-		map.layers['Object Layer 1'].draw = function(self)
-			for i, v in ipairs(self.objects) do
-				local quad = map.tiles[v.gid].quad
-				love.graphics.draw(map_texture, quad, v.x, v.y)
-			end
-		end
 
-		self.map = map
+		self.maps = maps
 	end,
 	enter = function (self, machine, ...)
 
@@ -317,15 +350,18 @@ states.map = {
 
 	end,
 	update = function (self, machine, ...)
-		self.map:update(dt)
+		self.maps[self.maps.current_index]:update(dt)
 	end,
 	draw = function (self, machine, ...)
+		if imgui.Button('Return to Town') then
+			state_machine:set_state('town')
+		end
 		love.graphics.setCanvas(self.canvas)
 			love.graphics.clear()
-			self.map:draw()
+			self.maps[self.maps.current_index]:draw()
 		love.graphics.setCanvas()
 
-		imgui.Image(self.canvas, imgui.ImVec2_Float(800,800))
+		imgui.Image(self.canvas, imgui.ImVec2_Float(400,400))
 	end,
 }
 states.battle = {
@@ -526,27 +562,6 @@ state_machine:set_state('title')
 
 local imgui_window = function ()
 	if imgui.Begin('All') then
-		if imgui.Button('Enter Battle') then
-			state_machine:set_state('battle')
-		end
-		imgui.SameLine()
-		if imgui.Button('Exit Battle') then
-			state_machine:set_state('map')
-		end
-		imgui.SameLine()
-		if imgui.Button('Save Game') then
-			bitser.dumpLoveFile('save.dat', saved_characters)
-		end
-		imgui.SameLine()
-		if imgui.Button('Load Game') then
-			saved_characters = bitser.loadLoveFile('save.dat')
-		end
-		if imgui.Button('Heal Party') then
-			for k, v in pairs(saved_characters) do
-				v.info.hp = v.info.max_hp
-			end
-		end
-
 		state_machine:draw()
 	end
 	imgui.End()
