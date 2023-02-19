@@ -12,6 +12,42 @@ sti = require('lib/sti')
 bump = require('lib/bump')
 
 bitser = require('lib/bitser')
+local Character = {
+	new = function (self)
+		local o = {}
+		setmetatable(o, self)
+		self.__index = self
+		o:init()
+		return o
+    end,
+
+	init = function (self)
+		self.info = {}
+	end,
+
+    set_info = function (self, info)
+        self.info = tablex.deep_copy(info)
+
+        return self
+    end,
+}
+local character_infos = require('character_infos')
+local actions = require('actions')
+saved_characters = {
+	fighter = Character:new()
+	:set_info(character_infos.fighter),
+
+	healer = Character:new()
+	:set_info(character_infos.medic),
+
+	mage = Character:new()
+	:set_info(character_infos.mage),
+}
+
+bitser.registerClass('Character', Character, getmetatable(Character:new()), nil, setmetatable)
+for k, v in pairs(actions) do
+	bitser.register(k, v)
+end
 
 input = {
     keys_down_last_frame = {
