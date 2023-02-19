@@ -145,8 +145,15 @@ local Battle = {
 
 	init_groups = function (self)
 		self.groups.all = self.characters
-		self.groups.allies = {self.characters[1], self.characters[2], self.characters[3]}
-		self.groups.enemies = {self.characters[4], self.characters[5], self.characters[6]}
+		self.groups.allies = {}
+		self.groups.enemies = {}
+		for k, v in pairs(self.characters) do
+			if v.info.is.enemy then
+				table.insert(self.groups.enemies, v)
+			else
+				table.insert(self.groups.allies, v)
+			end
+		end
 	end,
 
 	turn_end = function (self)
@@ -373,6 +380,16 @@ states.battle = {
 		self.battle = nil
 
 		self.gui = {
+			ai = function (self, battle)
+				if imgui.Button('Run AI') then
+					for i, v in ipairs(battle.characters_menu_data) do
+						if v.character.info.is.enemy then
+							v.targets:select_index(4)
+						end
+					end
+				end
+			end,
+
 			character = function (self, character_menu_data)
 				local function iterate_list_selectables (list)
 					for i, v in ipairs(list.items) do
@@ -412,9 +429,11 @@ states.battle = {
 				if imgui.BeginChild_Str('Allies', imgui.ImVec2_Float(200,200), true) then
 					if imgui.BeginTabBar('') then
 			
-						self:character(battle.characters_menu_data[1])
-						self:character(battle.characters_menu_data[2])
-						self:character(battle.characters_menu_data[3])
+						for i, v in ipairs(battle.characters_menu_data) do
+							if not v.character.info.is.enemy then
+								self:character(v)
+							end
+						end
 			
 						imgui.EndTabBar()
 					end
@@ -425,9 +444,11 @@ states.battle = {
 				if imgui.BeginChild_Str('Enemies', imgui.ImVec2_Float(200,200), true) then
 					if imgui.BeginTabBar('') then
 			
-						self:character(battle.characters_menu_data[4])
-						self:character(battle.characters_menu_data[5])
-						self:character(battle.characters_menu_data[6])
+						for i, v in ipairs(battle.characters_menu_data) do
+							if v.character.info.is.enemy then
+								self:character(v)
+							end
+						end
 			
 						imgui.EndTabBar()
 					end
@@ -450,20 +471,25 @@ states.battle = {
 		}
 	end,
 	enter = function (self, machine, ...)
+		local rat_1 = Character:new()
+		:set_info(character_infos.rat)
+		local rat_2 = Character:new()
+		:set_info(character_infos.rat)
+		local rat_3 = Character:new()
+		:set_info(character_infos.rat)
+
+		rat_1.info.is.enemy = true
+		rat_2.info.is.enemy = true
+		rat_3.info.is.enemy = true
+
 		local characters = {
 			saved_characters.fighter,
 			saved_characters.healer,
 			saved_characters.mage,
-		
-			Character:new()
-			:set_info(character_infos.rat),
 
-			Character:new()
-			:set_info(character_infos.rat),
-
-			Character:new()
-			:set_info(character_infos.rat),
-
+			rat_1,
+			rat_2,
+			rat_3
 		}
 		for i, v in ipairs(characters) do
 			local same_names = {}
@@ -524,6 +550,7 @@ states.battle = {
 		end
 	end,
 	draw = function (self, machine, ...)
+		self.gui:ai(self.battle)
 		self.gui:ally(self.battle)
 		imgui.SameLine()
 		self.gui:manager(self.battle)
@@ -575,7 +602,7 @@ state_machine:new(states)
 for k, v in pairs(states) do
 	v:init(state_machine)
 end
-state_machine:set_state('title')
+state_machine:set_state('battle')
 
 -- -------------------------------------------------------------------------- --
 

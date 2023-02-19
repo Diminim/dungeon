@@ -13,6 +13,8 @@ local character_info_new = function (name, max_hp, str, def, spd, actions)
 
 		is = {
 			dead = false,
+			
+			enemy = false,
 		}
 	}
 end
