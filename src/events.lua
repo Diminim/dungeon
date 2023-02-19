@@ -2,8 +2,8 @@ local events = {
 	character_died = function (battle)
 		for i, v in ipairs(battle.groups.all) do
 			local message
-			if (v.info.is_dead == false) and (v.info.hp <= 0) then
-				v.info.is_dead = true
+			if (v.info.is.dead == false) and (v.info.hp <= 0) then
+				v.info.is.dead = true
 				message = ('%s %s'):format(
 					v.info.name, 
 					'died!'
@@ -18,7 +18,7 @@ local events = {
 	allies_died = function (battle)
 		local dead_number = 0
 		for i, v in ipairs(battle.groups.allies) do
-			if (v.info.is_dead == true) then
+			if (v.info.is.dead == true) then
 				dead_number = dead_number + 1
 			end
 		end
@@ -35,7 +35,7 @@ local events = {
 	enemies_died = function (battle)
 		local dead_number = 0
 		for i, v in ipairs(battle.groups.enemies) do
-			if (v.info.is_dead == true) then
+			if (v.info.is.dead == true) then
 				dead_number = dead_number + 1
 			end
 		end

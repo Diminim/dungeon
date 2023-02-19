@@ -1,5 +1,9 @@
 require('globals')
 
+love.window.setMode(900, 900)
+love.window.setTitle('Dungeon')
+love.graphics.setDefaultFilter('nearest', 'nearest')
+
 local List = {
 	new = function (self)
 		local o = {}
@@ -165,7 +169,7 @@ local Battle = {
 		end
 	
 		for i, v in ipairs(self.action_priority_queue.queue[self.current_turn]) do
-			local message, chained_action = v.action()
+			local chained_action = v.action()
 			if chained_action then
 				local context = {
 					actor = v.actor,
@@ -175,9 +179,6 @@ local Battle = {
 	
 				local action_info = Action_Info:new(chained_action, context)
 				self.action_priority_queue:insertion_sort(self.current_turn, action_info)
-			end
-			if message then
-				table.insert(self.log, message)
 			end
 			for i, v in ipairs(self.active_events) do
 				v(self)
@@ -203,7 +204,7 @@ local saved_characters = {
 	:set_info(character_infos.fighter),
 
 	healer = Character:new()
-	:set_info(character_infos.healer),
+	:set_info(character_infos.medic),
 
 	mage = Character:new()
 	:set_info(character_infos.mage),
@@ -245,10 +246,12 @@ states.title = {
 		if imgui.Button('New Game') then
 			state_machine:set_state('town')
 		end
+		--[[
 		if imgui.Button('Load Game') then
 			saved_characters = bitser.loadLoveFile('save.dat')
 			state_machine:set_state('town')
 		end
+		--]]
 	end,
 }
 states.town = {
@@ -359,9 +362,10 @@ states.map = {
 		love.graphics.setCanvas(self.canvas)
 			love.graphics.clear()
 			self.maps[self.maps.current_index]:draw()
+
 		love.graphics.setCanvas()
 
-		imgui.Image(self.canvas, imgui.ImVec2_Float(400,400))
+		imgui.Image(self.canvas, imgui.ImVec2_Float(800,800))
 	end,
 }
 states.battle = {
@@ -452,14 +456,29 @@ states.battle = {
 			saved_characters.mage,
 		
 			Character:new()
-			:set_info(character_infos.d),
-		
+			:set_info(character_infos.rat),
+
 			Character:new()
-			:set_info(character_infos.e),
-		
+			:set_info(character_infos.rat),
+
 			Character:new()
-			:set_info(character_infos.f)
+			:set_info(character_infos.rat),
+
 		}
+		for i, v in ipairs(characters) do
+			local same_names = {}
+			table.insert(same_names, characters[i])
+			for i2 = i+1, #characters do
+				if characters[i].info.name == characters[i2].info.name then
+					table.insert(same_names, characters[i2])
+				end
+			end
+			if #same_names > 1 then
+				for i2, v2 in ipairs(same_names) do
+					v2.info.name = v2.info.name..' '..i2
+				end
+			end
+		end
 		self.battle = Battle:new(characters)
 		table.insert(self.battle.active_events, events.character_died)
 		table.insert(self.battle.active_events, events.allies_died)
@@ -562,7 +581,10 @@ state_machine:set_state('title')
 
 local imgui_window = function ()
 	if imgui.Begin('All') then
+		imgui.PushStyleVar_Float(12, 10)
 		state_machine:draw()
+		imgui.PopStyleVar(1)
+		--style:ScaleAllSizes(1)
 	end
 	imgui.End()
 end
