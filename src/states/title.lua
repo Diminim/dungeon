@@ -1,22 +1,4 @@
-local Character = {
-	new = function (self)
-		local o = {}
-		setmetatable(o, self)
-		self.__index = self
-		o:init()
-		return o
-    end,
-
-	init = function (self)
-		self.info = {}
-	end,
-
-    set_info = function (self, info)
-        self.info = tablex.deep_copy(info)
-
-        return self
-    end,
-}
+local Character = require('classes/Character')
 local character_infos = require('character_infos')
 
 local title = {

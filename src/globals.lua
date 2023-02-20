@@ -13,19 +13,8 @@ bump = require('lib/bump')
 
 
 local Character = require('classes/Character')
-local character_infos = require('character_infos')
 local actions = require('actions')
-
-saved_characters = {
-	fighter = Character:new()
-	:set_info(character_infos.fighter),
-
-	healer = Character:new()
-	:set_info(character_infos.medic),
-
-	mage = Character:new()
-	:set_info(character_infos.mage),
-}
+local saved_characters
 
 bitser = require('lib/bitser')
 bitser.registerClass('Character', Character, getmetatable(Character:new()), nil, setmetatable)
