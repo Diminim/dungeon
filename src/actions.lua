@@ -49,7 +49,7 @@ actions.attack = Action:new{
 		local actor = context.actor.info
 		local target = context.target.info
 		local blacklist = {
-			{context.actor.info.is.dead, false}
+			{context.actor.info.is.dead, false},
 		}
 
 

@@ -14,7 +14,7 @@ bump = require('lib/bump')
 
 local Character = require('classes/Character')
 local actions = require('actions')
-local saved_characters
+saved_characters = nil
 
 bitser = require('lib/bitser')
 bitser.registerClass('Character', Character, getmetatable(Character:new()), nil, setmetatable)
