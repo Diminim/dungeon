@@ -11,10 +11,7 @@ love.graphics.setDefaultFilter('nearest', 'nearest')
 
 local imgui_window = function ()
 	if imgui.Begin('All') then
-		imgui.PushStyleVar_Float(12, 10)
 		state_machine:draw()
-		imgui.PopStyleVar(1)
-		--style:ScaleAllSizes(1)
 	end
 	imgui.End()
 end
